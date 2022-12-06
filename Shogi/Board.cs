@@ -118,9 +118,7 @@ namespace ShogiWebsite.Shogi
             return currentPlayer.JavascriptMoveLists();
         }
 
-        internal bool IsPlayersTurn(bool isPlayer1) => (isPlayer1 && isPlayer1Turn) || !(isPlayer1 || isPlayer1Turn);
-
-        internal bool IsPlayersTurn(Player player) => IsPlayersTurn(player.isPlayer1);
+        internal bool IsPlayersTurn(Player player) => (player.isPlayer1 && isPlayer1Turn) || !(player.isPlayer1 || isPlayer1Turn);
 
         internal string LogToHtml()
         {

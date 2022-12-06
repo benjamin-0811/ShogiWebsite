@@ -43,64 +43,64 @@ namespace ShogiWebsite.Shogi
 
         internal Square? SquareAt(int column, int row) => IsOnBoard(column) && IsOnBoard(row) ? board.squares[column, row] : null;
 
-        internal Square? North(int n = 1, bool log = true)
+        internal Square? North(int distance = 1, bool printLog = true)
         {
-            if (log) BetterConsole.Info($"Looking {n} squares north of {CoordinateString()}");
-            int newRowIndex = rowIndex - n;
+            if (printLog) BetterConsole.Info($"Looking {distance} squares north of {CoordinateString()}");
+            int newRowIndex = rowIndex - distance;
             return SquareAt(colIndex, newRowIndex);
         }
 
-        internal Square? South(int n = 1, bool log = true)
+        internal Square? South(int distance = 1, bool printLog = true)
         {
-            if (log) BetterConsole.Info($"Looking {n} squares south of {CoordinateString()}");
-            int newRowIndex = rowIndex + n;
+            if (printLog) BetterConsole.Info($"Looking {distance} squares south of {CoordinateString()}");
+            int newRowIndex = rowIndex + distance;
             return SquareAt(colIndex, newRowIndex);
         }
 
-        internal Square? East(int n = 1, bool log = true)
+        internal Square? East(int distance = 1, bool printLog = true)
         {
-            if (log) BetterConsole.Info($"Looking {n} squares east of {CoordinateString()}");
-            int newColIndex = colIndex + n;
+            if (printLog) BetterConsole.Info($"Looking {distance} squares east of {CoordinateString()}");
+            int newColIndex = colIndex + distance;
             return SquareAt(newColIndex, rowIndex);
         }
 
-        internal Square? West(int n = 1, bool log = true)
+        internal Square? West(int distance = 1, bool printLog = true)
         {
-            if (log) BetterConsole.Info($"Looking {n} squares west of {CoordinateString()}");
-            int newColIndex = colIndex - n; ;
+            if (printLog) BetterConsole.Info($"Looking {distance} squares west of {CoordinateString()}");
+            int newColIndex = colIndex - distance; ;
             return SquareAt(newColIndex, rowIndex);
         }
 
-        internal Square? NorthEast(int n = 1, bool log = true)
+        internal Square? NorthEast(int distance = 1, bool printLog = true)
         {
-            if (log) BetterConsole.Info($"Looking {n} squares north east of {CoordinateString()}");
-            Square? north = North(n, false);
+            if (printLog) BetterConsole.Info($"Looking {distance} squares north east of {CoordinateString()}");
+            Square? north = North(distance, false);
             if (north == null) return null;
-            return north.East(n, false);
+            return north.East(distance, false);
         }
 
-        internal Square? NorthWest(int n = 1, bool log = true)
+        internal Square? NorthWest(int distance = 1, bool printLog = true)
         {
-            if (log) BetterConsole.Info($"Looking {n} squares north west of {CoordinateString()}");
-            Square? north = North(n, false);
+            if (printLog) BetterConsole.Info($"Looking {distance} squares north west of {CoordinateString()}");
+            Square? north = North(distance, false);
             if (north == null) return null;
-            return north.West(n, false);
+            return north.West(distance, false);
         }
 
-        internal Square? SouthEast(int n = 1, bool log = true)
+        internal Square? SouthEast(int distance = 1, bool printLog = true)
         {
-            if (log) BetterConsole.Info($"Looking {n} squares south east of {CoordinateString()}");
-            Square? south = South(n, false);
+            if (printLog) BetterConsole.Info($"Looking {distance} squares south east of {CoordinateString()}");
+            Square? south = South(distance, false);
             if (south == null) return null;
-            return south.East(n, false);
+            return south.East(distance, false);
         }
 
-        internal Square? SouthWest(int n = 1, bool log = true)
+        internal Square? SouthWest(int distance = 1, bool printLog = true)
         {
-            if (log) BetterConsole.Info($"Looking {n} squares north west of {CoordinateString()}.");
-            Square? south = South(n, false);
+            if (printLog) BetterConsole.Info($"Looking {distance} squares north west of {CoordinateString()}.");
+            Square? south = South(distance, false);
             if (south == null) return null;
-            return south.West(n, false);
+            return south.West(distance, false);
         }
 
         internal Square? KnightMove(bool isPlayer1, bool left)

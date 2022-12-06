@@ -26,7 +26,10 @@
 
         internal override List<Square> FindMoves()
         {
-            return ListMoves(new Func<int, bool, Square?>[] { square.North, square.NorthEast, square.East, square.SouthEast, square.South, square.SouthWest, square.West, square.NorthWest });
+            return ListMoves(new Func<int, bool, Square?>[] {
+                square.North, square.NorthEast, square.East, square.SouthEast,
+                square.South, square.SouthWest, square.West, square.NorthWest
+            });
         }
 
         internal bool WouldBeCheckAt(Square at)
@@ -35,7 +38,17 @@
             if (nLeft != null && nLeft.piece is Knight && DifferentPlayerAt(nLeft)) return true;
             Square? nRight = at.KnightMove(player.isPlayer1, false);
             if (nRight != null && nRight.piece is Knight && DifferentPlayerAt(nRight)) return true;
-            List<Square?> squares = new() { at.North(), at.NorthEast(), at.East(), at.SouthEast(), at.South(), at.SouthWest(), at.West(), at.NorthWest() }; //GetMoves();
+            List<Square?> squares = new()
+            {
+                at.North(),
+                at.NorthEast(),
+                at.East(),
+                at.SouthEast(),
+                at.South(),
+                at.SouthWest(),
+                at.West(),
+                at.NorthWest()
+            }; //GetMoves();
             foreach (Square? square in squares)
             {
                 if (square == null) continue;

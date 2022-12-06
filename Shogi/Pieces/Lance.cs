@@ -4,17 +4,17 @@
     {
         /// <summary>Lance on the board</summary>
         internal Lance(Player player, Square square) : base(player, true, square)
-        {
-        }
+        { }
 
         /// <summary>Lance on hand<br/>Does not contain an actual square on the board</summary>
         internal Lance(Player player, Board board) : base(player, true, board)
-        {
-        }
+        { }
 
         internal override List<Square> FindMoves() => isPromoted ? GoldMoves() : LanceMoves();
 
-        private List<Square> LanceMoves() => RangeMoves(new Func<int, bool, Square?>[] { player.isPlayer1 ? square.North : square.South });
+        private List<Square> LanceMoves() => RangeMoves(new Func<int, bool, Square?>[] {
+            player.isPlayer1 ? square.North : square.South
+        });
 
         internal override List<Square> FindDrops()
         {

@@ -4,13 +4,11 @@
     {
         /// <summary>Knight on the board</summary>
         internal Knight(Player player, Square square) : base(player, true, square)
-        {
-        }
+        { }
 
         /// <summary>Knight on hand<br/>Does not contain an actual square on the board</summary>
         internal Knight(Player player, Board board) : base(player, true, board)
-        {
-        }
+        { }
 
         internal override List<Square> FindMoves() => isPromoted ? GoldMoves() : KnightMoves();
 

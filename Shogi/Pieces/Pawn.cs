@@ -4,13 +4,11 @@
     {
         /// <summary>Pawn on the board</summary>
         internal Pawn(Player player, Square square) : base(player, true, square)
-        {
-        }
+        { }
 
         /// <summary>Pawn on hand<br/>Does not contain an actual square on the board</summary>
         internal Pawn(Player player, Board board) : base(player, true, board)
-        {
-        }
+        { }
 
         internal override List<Square> FindMoves()
         {

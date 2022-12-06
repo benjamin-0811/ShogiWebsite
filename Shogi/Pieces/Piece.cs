@@ -201,7 +201,9 @@ namespace ShogiWebsite.Shogi
             return newDrops;
         }
 
-        protected List<Square> GoldMoves() => ListMoves(new Func<int, bool, Square?>[] { Forward, FrontLeft, FrontRight, Left, Right, Back });
+        protected List<Square> GoldMoves() => ListMoves(new Func<int, bool, Square?>[] {
+            Forward, FrontLeft, FrontRight, Left, Right, Back
+        });
 
         /// <summary>Find lines of squares in multiple <paramref name="directions"/>.</summary>
         protected List<Square> RangeMoves(Func<int, bool, Square?>[] directions)
