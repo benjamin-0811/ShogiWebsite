@@ -1,4 +1,5 @@
-﻿using System.Drawing;
+﻿using System.Drawing.Imaging;
+using System.Drawing;
 
 namespace ShogiWebsite.Shogi.Pieces
 {
@@ -14,9 +15,9 @@ namespace ShogiWebsite.Shogi.Pieces
         private static readonly string promotedLance = ImageToBase64("+l.png");
         private static readonly string knight = ImageToBase64("n.png");
         private static readonly string promotedKnight = ImageToBase64("+n.png");
-        private static readonly string silverGeneral = ImageToBase64("s.png");
+        private static readonly string silver = ImageToBase64("s.png");
         private static readonly string promotedSilver = ImageToBase64("+s.png");
-        private static readonly string goldGeneral = ImageToBase64("g.png");
+        private static readonly string gold = ImageToBase64("g.png");
         private static readonly string blackKing = ImageToBase64("k.png");
         private static readonly string whiteKing = ImageToBase64("k-.png");
         private static readonly string nullPiece = ImageToBase64("null.png");
@@ -25,9 +26,9 @@ namespace ShogiWebsite.Shogi.Pieces
         {
             if (OperatingSystem.IsWindows())
             {
-                Image image = Image.FromFile(@$"{Program.Program.projectDir}\assets\img\{imageName}");
-                MemoryStream stream = new();
-                image.Save(stream, System.Drawing.Imaging.ImageFormat.Png);
+                var image = Image.FromFile(@$"{Program.projectDir}\assets\img\{imageName}");
+                var stream = new MemoryStream();
+                image.Save(stream, ImageFormat.Png);
                 stream.Position = 0;
                 var bytes = stream.ToArray();
                 return Convert.ToBase64String(bytes);
@@ -37,13 +38,13 @@ namespace ShogiWebsite.Shogi.Pieces
 
         internal static string Get(Piece? piece) => piece switch
         {
-            Pawn _ => piece.isPromoted ? promotedPawn : pawn,
-            Bishop _ => piece.isPromoted ? horse : bishop,
-            Rook _ => piece.isPromoted ? dragon : rook,
-            Lance _ => piece.isPromoted ? promotedLance : lance,
-            Knight _ => piece.isPromoted ? promotedKnight : knight,
-            Silver _ => piece.isPromoted ? promotedSilver : silverGeneral,
-            Gold _ => goldGeneral,
+            Pawn _ => piece.IsPromoted() ? promotedPawn : pawn,
+            Bishop _ => piece.IsPromoted() ? horse : bishop,
+            Rook _ => piece.IsPromoted() ? dragon : rook,
+            Lance _ => piece.IsPromoted() ? promotedLance : lance,
+            Knight _ => piece.IsPromoted() ? promotedKnight : knight,
+            Silver _ => piece.IsPromoted() ? promotedSilver : silver,
+            Gold _ => gold,
             King _ => piece.player.isPlayer1 ? blackKing : whiteKing,
             _ => nullPiece
         };

@@ -43,12 +43,6 @@ namespace ShogiWebsite.Shogi
             BetterConsole.Action($"Setup Player {(isPlayer1 ? 1 : 2)}'s turn.");
             boardPieces = PlayersPieces();
             Opponent().boardPieces = Opponent().PlayersPieces();
-            king.ResetProtection();
-            UpdateMoves();
-            UpdateDrops();
-            Opponent().UpdateMoves();
-            moveLists = GetMoveLists();
-            dropLists = GetDropLists();
             isCheck = king.IsCheck();
             if (isCheck)
             {
@@ -58,26 +52,6 @@ namespace ShogiWebsite.Shogi
                 {
                     board.EndGame(Opponent());
                     return;
-                }
-            }
-        }
-
-        internal void UpdateMoves()
-        {
-            boardPieces = PlayersPieces();
-            foreach (Piece piece in boardPieces)
-            {
-                piece.UpdateMoves();
-            }
-        }
-
-        internal void UpdateDrops()
-        {
-            foreach (KeyValuePair<Piece, int> piece in hand)
-            {
-                if (piece.Value > 0)
-                {
-                    piece.Key.UpdateDrops();
                 }
             }
         }
@@ -94,15 +68,10 @@ namespace ShogiWebsite.Shogi
                 board.EndGame(Opponent());
                 return;
             }
-            moveLists = GetMoveLists();
-            dropLists = GetDropLists();
             if (board.isOver) return;
             if (isCheck)
             {
-                moveLists = king.protectMoves;
-                moveLists[king.square.CoordinateString()] = king.GetMoves();
                 RemoveDangerousKingMoves();
-                dropLists = king.protectDrops;
             }
             else RemoveDangerousMoves();
         }
@@ -112,13 +81,12 @@ namespace ShogiWebsite.Shogi
             List<Square> newMoves = new();
             foreach (Square square in moveLists[king.square.CoordinateString()])
             {
-                if (!king.Smasic(square))
+                if (!king.DoesMoveCheckOwnKing(square))
                 {
                     newMoves.Add(square);
                 }
             }
             moveLists[king.square.CoordinateString()] = newMoves;
-            king.SetMoves(newMoves);
         }
 
         /// <summary>
@@ -136,40 +104,19 @@ namespace ShogiWebsite.Shogi
                 if (piece == null) continue;
                 foreach (Square square1 in list.Value)
                 {
-                    if (piece is King king)
+                    if (piece is King king && !king.WouldBeCheckAt(square1) || !piece.DoesMoveCheckOwnKing(square1))
                     {
-                        if (!king.WouldBeCheckAt(square1))
+                        string dictKey = list.Key;
+                        if (newMoves.ContainsKey(dictKey)) newMoves[dictKey].Add(square1);
+                        else
                         {
-                            string dictKey = list.Key;
-                            if (newMoves.ContainsKey(dictKey))
-                                newMoves[dictKey].Add(square1);
-                            else
-                            {
-                                var newValue = new KeyValuePair<string, List<Square>>(dictKey, new List<Square> { square1 });
-                                newMoves = newMoves.Append(newValue).ToDictionary(x => x.Key, x => x.Value);
-                            }
-                        }
-                    }
-                    else
-                    {
-                        if (!piece.Smasiokic(square1))
-                        {
-                            string dictKey = list.Key;
-                            if (newMoves.ContainsKey(dictKey))
-                                newMoves[dictKey].Add(square1);
-                            else
-                            {
-                                var newValue = new KeyValuePair<string, List<Square>>(dictKey, new List<Square> { square1 });
-                                newMoves = newMoves.Append(newValue).ToDictionary(x => x.Key, x => x.Value);
-                            }
+                            var newValue = new KeyValuePair<string, List<Square>>(dictKey, new List<Square> { square1 });
+                            newMoves = newMoves.Append(newValue).ToDictionary(x => x.Key, x => x.Value);
                         }
                     }
                 }
             }
             moveLists = newMoves;
-
-
-
         }
 
         internal Player Opponent()
@@ -204,19 +151,19 @@ namespace ShogiWebsite.Shogi
             _ => new KeyValuePair<Piece, int>(new Pawn(this, board), newAmount),
         };
 
-        internal Dictionary<string, List<Square>> GetMoveLists()
+        internal Dictionary<string, IEnumerable<Square>> GetMoveLists()
         {
-            Dictionary<string, List<Square>> dict = new();
-            foreach (Piece piece in boardPieces) dict[piece.square.CoordinateString()] = piece.GetMoves();
+            var dict = new Dictionary<string, IEnumerable<Square>>();
+            foreach (var piece in boardPieces) dict[piece.square.CoordinateString()] = piece.FindMoves();
             return dict;
         }
 
-        internal Dictionary<string, List<Square>> GetDropLists()
+        internal Dictionary<string, IEnumerable<Square>> GetDropLists()
         {
-            Dictionary<string, List<Square>> dict = new();
-            foreach (KeyValuePair<Piece, int> piece in hand)
+            var dict = new Dictionary<string, IEnumerable<Square>>();
+            foreach (var piece in hand)
             {
-                if (piece.Value > 0) dict[Names.Abbr(piece.Key)] = piece.Key.GetDrops();
+                if (piece.Value > 0) dict[Names.Abbreviation(piece.Key)] = piece.Key.FindDrops();
             }
             return dict;
         }
@@ -279,7 +226,7 @@ namespace ShogiWebsite.Shogi
                 text += $"<div class=\"handPiece\" style=\"background-image:url('data:image/png;base64,{image}')\"";
                 if (amount > 0 && board.IsPlayersTurn(this) && !isOver)
                 {
-                    string abbr = Names.Abbr(piece);
+                    string abbr = Names.Abbreviation(piece);
                     text += $" id=\"{abbr}\" onclick=\"selectMoves('{abbr}')\"";
                 }
                 text += $">{amount}</div>";

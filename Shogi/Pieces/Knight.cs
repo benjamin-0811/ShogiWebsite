@@ -3,40 +3,33 @@
     internal class Knight : Piece
     {
         /// <summary>Knight on the board</summary>
-        internal Knight(Player player, Square square) : base(player, true, square)
-        { }
+        internal Knight(Player player, Square square) : base(player, true, square) { }
 
         /// <summary>Knight on hand<br/>Does not contain an actual square on the board</summary>
-        internal Knight(Player player, Board board) : base(player, true, board)
-        { }
+        internal Knight(Player player, Board board) : base(player, true, board) { }
 
-        internal override List<Square> FindMoves() => isPromoted ? GoldMoves() : KnightMoves();
+        internal override IEnumerable<Square> FindMoves() => isPromoted ? GoldMoves() : KnightMoves();
 
-        private List<Square> KnightMoves()
+        private IEnumerable<Square> KnightMoves()
         {
-            List<Square> newMoves = new();
-            Square? left = KnightMoveLeft();
-            if (left != null && Available(left)) newMoves.Add(left);
-            Square? right = KnightMoveRight();
-            if (right != null && Available(right)) newMoves.Add(right);
-            return newMoves;
+            var left = KnightMoveLeft();
+            if (left != null && IsAvailableSquare(left)) yield return left;
+            var right = KnightMoveRight();
+            if (right != null && IsAvailableSquare(right)) yield return right;
         }
 
-        internal override List<Square> FindDrops()
+        internal override IEnumerable<Square> FindDrops()
         {
-            // Cannot drop Knight on last 2 rows
-            List<Square> newMoves = new();
             int min = player.isPlayer1 ? 2 : 0;
             int max = player.isPlayer1 ? 8 : 6;
             for (int i = min; i <= max; i++)
             {
                 for (int j = 0; j < 9; j++)
                 {
-                    Square square = board.squares[j, i];
-                    if (square.piece == null) newMoves.Add(square);
+                    var square = board.squares[j, i];
+                    if (square.piece == null) yield return square;
                 }
             }
-            return newMoves;
         }
 
         internal override void ForcePromote()

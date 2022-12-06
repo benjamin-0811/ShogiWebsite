@@ -1,0 +1,5 @@
+C:\Users\bmueller\source\repos\ShogiWebsite\obj\Debug\net6.0\ShogiWebsite.csproj.AssemblyReference.cache
+C:\Users\bmueller\source\repos\ShogiWebsite\obj\Debug\net6.0\ShogiWebsite.GeneratedMSBuildEditorConfig.editorconfig
+C:\Users\bmueller\source\repos\ShogiWebsite\obj\Debug\net6.0\ShogiWebsite.AssemblyInfoInputs.cache
+C:\Users\bmueller\source\repos\ShogiWebsite\obj\Debug\net6.0\ShogiWebsite.AssemblyInfo.cs
+C:\Users\bmueller\source\repos\ShogiWebsite\obj\Debug\net6.0\ShogiWebsite.csproj.CoreCompileInputs.cache

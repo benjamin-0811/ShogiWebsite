@@ -3,30 +3,37 @@
     internal class Pawn : Piece
     {
         /// <summary>Pawn on the board</summary>
-        internal Pawn(Player player, Square square) : base(player, true, square)
-        { }
+        internal Pawn(Player player, Square square) : base(player, true, square) { }
 
         /// <summary>Pawn on hand<br/>Does not contain an actual square on the board</summary>
-        internal Pawn(Player player, Board board) : base(player, true, board)
-        { }
+        internal Pawn(Player player, Board board) : base(player, true, board) { }
 
-        internal override List<Square> FindMoves()
+        internal override IEnumerable<Square> FindMoves() => isPromoted ? GoldMoves() : PawnMove();
+
+        private IEnumerable<Square> PawnMove()
         {
-            if (isPromoted) return GoldMoves();
-            else
+            Square? front = Forward();
+            if (front != null && DifferentPlayer(front)) yield return front;
+        }
+
+        internal override IEnumerable<Square> FindDrops()
+        {
+            int min = player.isPlayer1 ? 1 : 0;
+            int max = player.isPlayer1 ? 8 : 7;
+            foreach (int i in ColumnsWithoutOwnPawns())
             {
-                Square? front = Forward();
-                if (front != null && DifferentPlayerAt(front)) return new() { front };
-                return new();
+                for (int j = min; j <= max; j++)
+                {
+                    Square square = board.squares[i, j];
+                    if (square.piece == null && !WouldCheckmate(square)) yield return square;
+                }
             }
         }
 
-        internal override List<Square> FindDrops()
+        private IEnumerable<int> ColumnsWithoutOwnPawns()
         {
-            List<Square> newDrops = new();
             int min = player.isPlayer1 ? 1 : 0;
             int max = player.isPlayer1 ? 8 : 7;
-            List<int> colWithoutPawn = new();
             bool[] colHasPawn = new bool[9];
             for (int i = 0; i < 9; i++)
             {
@@ -42,28 +49,11 @@
             }
             for (int i = 0; i < colHasPawn.Length; i++)
             {
-                if (!colHasPawn[i]) colWithoutPawn.Add(i);
+                if (!colHasPawn[i]) yield return i;
             }
-            foreach (int i in colWithoutPawn)
-            {
-                for (int j = min; j <= max; j++)
-                {
-                    Square square = board.squares[i, j];
-                    if (square.piece == null && !WouldCheckmate(square)) newDrops.Add(square);
-                }
-            }
-            return newDrops;
         }
 
-        private bool IsOwnPawn(Piece? piece)
-        {
-            if (piece == null) return false;
-            bool f1 = piece is Pawn;
-            bool f2 = !piece.isPromoted;
-            bool f3 = player.isPlayer1 == piece.player.isPlayer1;
-            if (f1 && f2 && f3) return true;
-            return false;
-        }
+        private bool IsOwnPawn(Piece? piece) => piece is Pawn && !piece.isPromoted && DifferentPlayer(piece);
 
         // WIP
         private bool WouldCheckmate(Square square)

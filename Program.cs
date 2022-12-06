@@ -1,10 +1,9 @@
 ﻿using System.Net.Sockets;
 using System.Text;
 using ShogiWebsite.Shogi;
-using ShogiWebsite;
 
 
-namespace Program
+namespace ShogiWebsite
 {
     class Program
     {

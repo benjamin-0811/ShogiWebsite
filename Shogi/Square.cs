@@ -39,9 +39,9 @@ namespace ShogiWebsite.Shogi
             return $"{rows[rowIndex]}{columns[colIndex]}";
         }
 
-        internal static bool IsOnBoard(int index) => 0 <= index && index < 9;
+        internal static bool IsOnBoard(int colIndex, int rowIndex) => 0 <= colIndex && colIndex < 9 && 0 <= rowIndex && rowIndex < 9;
 
-        internal Square? SquareAt(int column, int row) => IsOnBoard(column) && IsOnBoard(row) ? board.squares[column, row] : null;
+        internal Square? SquareAt(int column, int row) => IsOnBoard(column, row) ? board.squares[column, row] : null;
 
         internal Square? North(int distance = 1, bool printLog = true)
         {
