@@ -1,8 +1,8 @@
 ﻿using System.Drawing;
 
-namespace Blank.Shogi.Pieces
+namespace ShogiWebsite.Shogi.Pieces
 {
-    internal static class PieceImages
+    internal static class Images
     {
         private static readonly string pawn = ImageToBase64("p.png");
         private static readonly string promotedPawn = ImageToBase64("+p.png");
@@ -25,9 +25,9 @@ namespace Blank.Shogi.Pieces
         {
             if (OperatingSystem.IsWindows())
             {
-                Image img = Image.FromFile(@$"{Program.Program.projectDir}\assets\img\{imageName}");
+                Image image = Image.FromFile(@$"{Program.Program.projectDir}\assets\img\{imageName}");
                 MemoryStream stream = new();
-                img.Save(stream, System.Drawing.Imaging.ImageFormat.Png);
+                image.Save(stream, System.Drawing.Imaging.ImageFormat.Png);
                 stream.Position = 0;
                 var bytes = stream.ToArray();
                 return Convert.ToBase64String(bytes);
@@ -35,15 +35,15 @@ namespace Blank.Shogi.Pieces
             else return "";
         }
 
-        internal static string Get(AbstractPiece? piece) => piece switch
+        internal static string Get(Piece? piece) => piece switch
         {
             Pawn _ => piece.isPromoted ? promotedPawn : pawn,
             Bishop _ => piece.isPromoted ? horse : bishop,
             Rook _ => piece.isPromoted ? dragon : rook,
             Lance _ => piece.isPromoted ? promotedLance : lance,
             Knight _ => piece.isPromoted ? promotedKnight : knight,
-            SilverGeneral _ => piece.isPromoted ? promotedSilver : silverGeneral,
-            GoldGeneral _ => goldGeneral,
+            Silver _ => piece.isPromoted ? promotedSilver : silverGeneral,
+            Gold _ => goldGeneral,
             King _ => piece.player.isPlayer1 ? blackKing : whiteKing,
             _ => nullPiece
         };

@@ -1,8 +1,9 @@
-﻿using Blank.Shogi.Pieces;
-using Blank;
+﻿using ShogiWebsite.Shogi.Pieces;
 
-namespace Blank.Shogi {
-    internal abstract class AbstractPiece {
+namespace ShogiWebsite.Shogi
+{
+    internal abstract class Piece
+    {
         internal Player player;
         internal bool isPromoted;
         internal readonly bool canPromote;
@@ -12,28 +13,27 @@ namespace Blank.Shogi {
         protected List<Square> drops;
         internal bool isOnBoard;
 
-        internal List<Square> GetMoves() {
-            return new List<Square>(moves);
-        }
+        internal List<Square> GetMoves() => new(moves);
 
-        internal List<Square> GetDrops() {
-            return new List<Square>(drops);
-        }
+        internal List<Square> GetDrops() => new(drops);
 
-        internal void UpdateMoves() {
-            BC.Action($"Update Move List for {IdentifyingString()}");
+        internal void UpdateMoves()
+        {
+            BetterConsole.Action($"Update Move List for {IdentifyingString()}");
             moves = new();
             moves = FindMoves();
         }
 
-        internal void UpdateDrops() {
-            BC.Action($"Update Drop List for {IdentifyingString()}");
+        internal void UpdateDrops()
+        {
+            BetterConsole.Action($"Update Drop List for {IdentifyingString()}");
             drops = new();
             drops = FindDrops();
         }
 
         /// <summary>Constructor for a piece on the board</summary>
-        internal AbstractPiece(Player player, bool canPromote, Square square) {
+        internal Piece(Player player, bool canPromote, Square square)
+        {
             this.player = player;
             isPromoted = false;
             this.canPromote = canPromote;
@@ -45,7 +45,8 @@ namespace Blank.Shogi {
         }
 
         /// <summary>Piece on hand.<br/>Does not contain an actual square on the board</summary>
-        internal AbstractPiece(Player player, bool canPromote, Board board) {
+        internal Piece(Player player, bool canPromote, Board board)
+        {
             this.player = player;
             isPromoted = false;
             this.canPromote = canPromote;
@@ -64,20 +65,24 @@ namespace Blank.Shogi {
         /// <param name="to">Desitination square</param>
         /// <param name="doesPromote">Does this piece promote?</param>
         /// <returns><c>true</c> if this move was successful</returns>
-        internal bool Move(Square to, bool doesPromote) {
+        internal bool Move(Square to, bool doesPromote)
+        {
             List<Square> s = GetMoves();
             string piece1S = IdentifyingString();
             string toS = to.CoordinateString();
-            BC.Info($"Trying to move {piece1S} to {toS}.");
-            if (s != null && s.Contains(to)) {
+            BetterConsole.Info($"Trying to move {piece1S} to {toS}.");
+            if (s != null && s.Contains(to))
+            {
                 string piece2S = "";
                 Square old = square;
-                AbstractPiece? piece = to.piece;
+                Piece? piece = to.piece;
                 char moveType = '-';
-                if (piece != null && piece.player != player) {
-                    BC.Info($"There is {piece2S}.");
+                if (piece != null && piece.player != player)
+                {
+                    BetterConsole.Info($"There is {piece2S}.");
                     piece2S = piece.IdentifyingString();
-                    if (piece is not King) {
+                    if (piece is not King)
+                    {
                         player.ChangeHandPieceAmount(piece, 1);
                         moveType = 'x';
                     }
@@ -85,7 +90,7 @@ namespace Blank.Shogi {
                 old.piece = null;
                 to.piece = this;
                 square = to;
-                string part1 = $"{PieceNames.Abbr(this)}{old.CoordinateString()}";
+                string part1 = $"{Names.Abbr(this)}{old.CoordinateString()}";
                 bool wasPromoted = isPromoted;
                 ForcePromote();
                 if (wasPromoted != isPromoted) doesPromote = true;
@@ -94,7 +99,7 @@ namespace Blank.Shogi {
                 if (doesPromote) isPromoted = true;
                 return true;
             }
-            BC.Error("Illegal move!");
+            BetterConsole.Error("Illegal move!");
             return false;
         }
 
@@ -104,32 +109,35 @@ namespace Blank.Shogi {
         /// </summary>
         /// <param name="to">Destination square of this piece</param>
         /// <returns><c>true</c> if this move was successful</returns>
-        internal bool MoveFromHand(Square to) {
+        internal bool MoveFromHand(Square to)
+        {
             List<Square> s = GetDrops();
-            AbstractPiece? piece = to.piece;
+            Piece? piece = to.piece;
             string pieceS = IdentifyingString();
             string toS = to.CoordinateString();
-            BC.Info($"Trying to drop {pieceS} on {toS}.");
-            if (s != null && s.Contains(to) && piece == null && piece is not King) {
+            BetterConsole.Info($"Trying to drop {pieceS} on {toS}.");
+            if (s != null && s.Contains(to) && piece == null && piece is not King)
+            {
                 player.ChangeHandPieceAmount(this, -1);
-                BC.Action($"Removed 1 {PieceNames.Get(this)} from Player {(player.isPlayer1 ? "1" : "2")}'s hand.");
+                BetterConsole.Action($"Removed 1 {Names.Get(this)} from Player {(player.isPlayer1 ? "1" : "2")}'s hand.");
                 to.piece = this;
                 to.piece.isOnBoard = true;
                 square = to;
-                board.log.Add($"Player {(player.isPlayer1 ? 1 : 2)} : {PieceNames.Abbr(this)}*{to.column}{to.row}");
-                BC.Action($"Dropped {pieceS} on {toS}.");
+                board.log.Add($"Player {(player.isPlayer1 ? 1 : 2)} : {Names.Abbr(this)}*{to.column}{to.row}");
+                BetterConsole.Action($"Dropped {pieceS} on {toS}.");
                 return true;
             }
-            BC.Error($"{pieceS} cannot perform this move!");
+            BetterConsole.Error($"{pieceS} cannot perform this move!");
             return false;
         }
 
         /// <summary>Simulate Move And See If Own King Is Check</summary>
-        internal bool Smasiokic(Square to) {
+        internal bool Smasiokic(Square to)
+        {
             bool result = false;
             // Save old state
             Square oldSquare = square;
-            AbstractPiece? oldToPiece = to.piece;
+            Piece? oldToPiece = to.piece;
             // Make new state
             to.piece = this;
             square = to;
@@ -137,14 +145,10 @@ namespace Blank.Shogi {
             player.UpdateMoves();
             player.Opponent().UpdateMoves();
             // save result
-            if (player.king.IsCheck()) {
-                result = true;
-            }
+            if (player.king.IsCheck()) result = true;
             // restore old state
             to.piece = oldToPiece;
-            if (oldToPiece != null) {
-                oldToPiece.square = to;
-            }
+            if (oldToPiece != null) oldToPiece.square = to;
             oldSquare.piece = this;
             square = oldSquare;
             UpdateMoves();
@@ -152,24 +156,25 @@ namespace Blank.Shogi {
             return result;
         }
 
-        internal void Promote() {
+        internal void Promote()
+        {
             string pieceS = IdentifyingString();
-            BC.Info($"Trying to promote {pieceS}.");
-            if (canPromote) {
+            BetterConsole.Info($"Trying to promote {pieceS}.");
+            if (canPromote)
+            {
                 isPromoted = true;
-                BC.Action($"{pieceS} was promoted.");
+                BetterConsole.Action($"{pieceS} was promoted.");
             }
-            else BC.Error($"{pieceS} cannot be promoted!");
+            else BetterConsole.Error($"{pieceS} cannot be promoted!");
         }
 
-        internal string IdentifyingString() {
-            return $"Player {(player.isPlayer1 ? "1" : "2")}'s {PieceNames.Get(this)} on {square.CoordinateString()}";
-        }
+        internal string IdentifyingString() => $"Player {(player.isPlayer1 ? "1" : "2")}'s {Names.Get(this)} on {square.CoordinateString()}";
 
         internal virtual void ForcePromote() { }
 
-        internal bool CanMoveTo(Square square) {
-            BC.Info($"See if {IdentifyingString()} can move to {square.CoordinateString()}.");
+        internal bool CanMoveTo(Square square)
+        {
+            BetterConsole.Info($"See if {IdentifyingString()} can move to {square.CoordinateString()}.");
             List<Square> availableSquares = GetMoves();
             if (availableSquares == null) return false;
             return availableSquares.Contains(square);
@@ -181,55 +186,38 @@ namespace Blank.Shogi {
         /// <summary>
         /// Find all squares where this piece can be dropped from the player's hand
         /// </summary>
-        internal virtual List<Square> FindDrops() {
-            BC.Info($"Trying to find squares to move to for {IdentifyingString()}");
+        internal virtual List<Square> FindDrops()
+        {
+            BetterConsole.Info($"Trying to find squares to move to for {IdentifyingString()}");
             List<Square> newDrops = new();
-            for (int i = 0; i < 9; i++) {
-                for (int j = 0; j < 9; j++) {
+            for (int i = 0; i < 9; i++)
+            {
+                for (int j = 0; j < 9; j++)
+                {
                     Square square = board.squares[i, j];
-                    if (square.piece == null) {
-                        newDrops.Add(square);
-                    }
+                    if (square.piece == null) newDrops.Add(square);
                 }
             }
             return newDrops;
         }
 
-        protected List<Square> GoldMoves() {
-            /*
-            List<Square> newMoves = new();
-            List<Square?> sList = new();
-            sList.Add(GetAvailable(Forward));
-            sList.Add(GetAvailable(FrontLeft));
-            sList.Add(GetAvailable(FrontRight));
-            sList.Add(GetAvailable(Left));
-            sList.Add(GetAvailable(Right));
-            sList.Add(GetAvailable(Back));
-            for (int i = 0; i < sList.Count; i++) {
-                Square? s1 = sList[i];
-                if (s1 != null) newMoves.Add(s1);
-            }
-            return newMoves;
-            */
-            return ListMoves(new Func<int, bool, Square?>[] { Forward, FrontLeft, FrontRight, Left, Right, Back});
-        }
+        protected List<Square> GoldMoves() => ListMoves(new Func<int, bool, Square?>[] { Forward, FrontLeft, FrontRight, Left, Right, Back });
 
         /// <summary>Find lines of squares in multiple <paramref name="directions"/>.</summary>
-        protected List<Square> RangeMoves(Func<int, bool, Square?>[] directions) {
+        protected List<Square> RangeMoves(Func<int, bool, Square?>[] directions)
+        {
             List<Square> newMoves = new();
-            for (int i = 0; i < directions.Length; i++) {
+            for (int i = 0; i < directions.Length; i++)
+            {
                 // Square? temp = square;
                 int distance = 1;
                 bool flag = true;
-                while (flag) {
+                while (flag)
+                {
                     Square? temp = directions[i](distance, true);
-                    if (temp == null) {
-                        break;
-                    }
+                    if (temp == null) break;
                     flag = CanContinue(temp);
-                    if (Available(temp)) {
-                        newMoves.Add(temp);
-                    }
+                    if (Available(temp)) newMoves.Add(temp);
                     distance++;
                 }
             }
@@ -238,13 +226,13 @@ namespace Blank.Shogi {
 
         // See if I should add the ability to use different distances, as of now it seems kinda useless.
         /// <summary>Find one square in each of the given <paramref name="directions"/>.</summary>
-        protected List<Square> ListMoves(Func<int, bool, Square?>[] directions) {
+        protected List<Square> ListMoves(Func<int, bool, Square?>[] directions)
+        {
             List<Square> newMoves = new();
             List<Square?> sList = new();
-            foreach(Func<int, bool, Square?> direction in directions) {
-                sList.Add(GetAvailable(direction));
-            }
-            for (int i = 0; i < sList.Count; i++) {
+            foreach (Func<int, bool, Square?> direction in directions) sList.Add(GetAvailable(direction));
+            for (int i = 0; i < sList.Count; i++)
+            {
                 Square? s1 = sList[i];
                 if (s1 != null) newMoves.Add(s1);
             }
@@ -255,9 +243,10 @@ namespace Blank.Shogi {
         /// Check if to continue a loop or if this piece can move further
         /// </summary>
         /// <param name="square">Current square in a loop</param>
-        protected static bool CanContinue(Square? square) {
+        protected static bool CanContinue(Square? square)
+        {
             if (square == null) return false;
-            AbstractPiece? piece = square.piece;
+            Piece? piece = square.piece;
             if (piece == null) return true;
             return false;
         }
@@ -267,9 +256,10 @@ namespace Blank.Shogi {
         /// Does however not check if this piece can move there.
         /// </summary>
         /// <param name="square">Square to check</param>
-        protected bool Available(Square? square) {
+        protected bool Available(Square? square)
+        {
             if (square == null) return false;
-            AbstractPiece? piece = square.piece;
+            Piece? piece = square.piece;
             if (piece == null) return true;
             if (piece.player == player) return false;
             return true;
@@ -282,93 +272,92 @@ namespace Blank.Shogi {
         /// <paramref name="func"/>(<paramref name="n"/>) if it is available,<br/>
         /// <c>null</c> if it's not
         /// </returns>
-        protected virtual Square? GetAvailable(Func<int, bool, Square?> func, int n = 1) {
+        protected virtual Square? GetAvailable(Func<int, bool, Square?> func, int n = 1)
+        {
             Square? square = func(n, true);
             if (square != null && Available(square)) return square;
             return null;
         }
 
-        internal bool DifferentPlayerAt(Square square) {
+        internal bool DifferentPlayerAt(Square square)
+        {
             string destS = square.CoordinateString();
-            BC.Info($"See if there is another player or no player on {destS}");
-            AbstractPiece? piece = square.piece;
-            if (piece == null) {
-                BC.Info($"There is no piece on {destS}");
+            BetterConsole.Info($"See if there is another player or no player on {destS}");
+            Piece? piece = square.piece;
+            if (piece == null)
+            {
+                BetterConsole.Info($"There is no piece on {destS}");
                 return true;
             }
-            else if (piece.player != player) {
-                BC.Info($"There is another player's piece on {destS}");
+            else if (piece.player != player)
+            {
+                BetterConsole.Info($"There is another player's piece on {destS}");
                 return true;
             }
-            else {
-                BC.Info($"There is the same player's piece on {destS}");
+            else
+            {
+                BetterConsole.Info($"There is the same player's piece on {destS}");
                 return false;
             }
         }
 
-        internal Square? Forward(int distance = 1, bool log = true) {
-            if (log) {
-                BC.Info($"Looking {distance} squares in front of {IdentifyingString()}");
-            }
+        internal Square? Forward(int distance = 1, bool log = true)
+        {
+            if (log) BetterConsole.Info($"Looking {distance} squares in front of {IdentifyingString()}");
             return player.isPlayer1 ? square.North(distance, false) : square.South(distance, false);
         }
 
-        internal Square? Back(int distance = 1, bool log = true) {
-            if (log) {
-                BC.Info($"Looking {distance} squares behind {IdentifyingString()}");
-            }
+        internal Square? Back(int distance = 1, bool log = true)
+        {
+            if (log) BetterConsole.Info($"Looking {distance} squares behind {IdentifyingString()}");
             return player.isPlayer1 ? square.South(distance, false) : square.North(distance, false);
         }
 
-        internal Square? Left(int distance = 1, bool log = true) {
-            if (log) {
-                BC.Info($"Looking {distance} squares left to {IdentifyingString()}");
-            }
+        internal Square? Left(int distance = 1, bool log = true)
+        {
+            if (log) BetterConsole.Info($"Looking {distance} squares left to {IdentifyingString()}");
             return player.isPlayer1 ? square.West(distance, false) : square.East(distance, false);
         }
 
-        internal Square? Right(int distance = 1, bool log = true) {
-            if (log) {
-                BC.Info($"Looking {distance} squares right to {IdentifyingString()}");
-            }
+        internal Square? Right(int distance = 1, bool log = true)
+        {
+            if (log) BetterConsole.Info($"Looking {distance} squares right to {IdentifyingString()}");
             return player.isPlayer1 ? square.East(distance, false) : square.West(distance, false);
         }
 
-        internal Square? FrontLeft(int distance = 1, bool log = true) {
-            if (log) {
-                BC.Info($"Looking {distance} squares to the front left of {IdentifyingString()}");
-            }
+        internal Square? FrontLeft(int distance = 1, bool log = true)
+        {
+            if (log) BetterConsole.Info($"Looking {distance} squares to the front left of {IdentifyingString()}");
             return player.isPlayer1 ? square.NorthWest(distance, false) : square.SouthEast(distance, false);
         }
 
-        internal Square? FrontRight(int distance = 1, bool log = true) {
-            if (log) {
-                BC.Info($"Looking {distance} squares to the front right of {IdentifyingString()}");
-            }
+        internal Square? FrontRight(int distance = 1, bool log = true)
+        {
+            if (log) BetterConsole.Info($"Looking {distance} squares to the front right of {IdentifyingString()}");
             return player.isPlayer1 ? square.NorthEast(distance, false) : square.SouthWest(distance, false);
         }
 
-        internal Square? BackLeft(int distance = 1, bool log = true) {
-            if (log) {
-                BC.Info($"Looking {distance} squares to the back left of {IdentifyingString()}");
-            }
+        internal Square? BackLeft(int distance = 1, bool log = true)
+        {
+            if (log) BetterConsole.Info($"Looking {distance} squares to the back left of {IdentifyingString()}");
             return player.isPlayer1 ? square.SouthWest(distance, false) : square.NorthEast(distance, false);
         }
 
-        internal Square? BackRight(int distance = 1, bool log = true) {
-            if (log) {
-                BC.Info($"Looking {distance} squares to the back right of {IdentifyingString()}");
-            }
+        internal Square? BackRight(int distance = 1, bool log = true)
+        {
+            if (log) BetterConsole.Info($"Looking {distance} squares to the back right of {IdentifyingString()}");
             return player.isPlayer1 ? square.SouthEast(distance, false) : square.NorthWest(distance, false);
         }
 
-        internal Square? KnightMoveLeft() {
-            BC.Info($"Looking one knight's move away to the left of {IdentifyingString()}");
+        internal Square? KnightMoveLeft()
+        {
+            BetterConsole.Info($"Looking one knight's move away to the left of {IdentifyingString()}");
             return square.KnightMove(player, true);
         }
 
-        internal Square? KnightMoveRight() {
-            BC.Info($"Looking one knight's move away to the right of {IdentifyingString()}");
+        internal Square? KnightMoveRight()
+        {
+            BetterConsole.Info($"Looking one knight's move away to the right of {IdentifyingString()}");
             return square.KnightMove(player, false);
         }
 

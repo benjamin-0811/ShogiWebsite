@@ -1,6 +1,6 @@
-﻿namespace Blank.Shogi.Pieces
+﻿namespace ShogiWebsite.Shogi.Pieces
 {
-    internal static class PieceNames
+    internal static class Names
     {
         private static readonly string pawn = "Pawn";
         private static readonly string promotedPawn = "Promoted Pawn";
@@ -26,21 +26,21 @@
         private static readonly string abbrGoldGeneral = "G";
         private static readonly string abbrKing = "K";
 
-        internal static string Get(AbstractPiece? piece) => piece switch
+        internal static string Get(Piece? piece) => piece switch
         {
             Pawn _ => piece.isPromoted ? promotedPawn : pawn,
             Bishop _ => piece.isPromoted ? horse : bishop,
             Rook _ => piece.isPromoted ? dragon : rook,
             Lance _ => piece.isPromoted ? promotedLance : lance,
             Knight _ => piece.isPromoted ? promotedKnight : knight,
-            SilverGeneral _ => piece.isPromoted ? promotedSilver : silverGeneral,
-            GoldGeneral _ => goldGeneral,
+            Silver _ => piece.isPromoted ? promotedSilver : silverGeneral,
+            Gold _ => goldGeneral,
             King _ => king,
             _ => ""
         };
 
         /// <summary>Get abbreviation</summary>
-        internal static string Abbr(AbstractPiece? piece)
+        internal static string Abbr(Piece? piece)
         {
             string abbr = piece switch
             {
@@ -49,8 +49,8 @@
                 Rook _ => abbrRook,
                 Lance _ => abbrLance,
                 Knight _ => abbrKnight,
-                SilverGeneral _ => abbrSilverGeneral,
-                GoldGeneral _ => abbrGoldGeneral,
+                Silver _ => abbrSilverGeneral,
+                Gold _ => abbrGoldGeneral,
                 King _ => abbrKing,
                 _ => ""
             };

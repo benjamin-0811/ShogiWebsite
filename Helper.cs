@@ -4,41 +4,58 @@ namespace ShogiWebsite
 {
     internal class Helper
     {
-        internal static string RepeatString(string sequence, int amount)
-        {
-            return new StringBuilder().Insert(0, sequence, amount).ToString();
-        }
+        internal static string RepeatString(string sequence, int amount) => new StringBuilder().Insert(0, sequence, amount).ToString();
     }
 
-    /// <summary>BC : Better Console</summary>
-    internal class BC
+    internal class BetterConsole
     {
+        internal static bool printAction = false;
+        internal static bool printError = false;
+        internal static bool printInfo = false;
+        internal static bool printSpecial = false;
+        internal static ConsoleColor actionColor = ConsoleColor.Yellow;
+        internal static ConsoleColor errorColor = ConsoleColor.Red;
+        internal static ConsoleColor infoColor = ConsoleColor.Green;
+        internal static ConsoleColor specialColor = ConsoleColor.Cyan;
+
         internal static void Action(string message)
         {
-            //Console.ForegroundColor = ConsoleColor.Yellow;
-            //Console.WriteLine($"Action  : {message}");
-            //Console.ResetColor();
+            if (printAction)
+            {
+                Console.ForegroundColor = actionColor;
+                Console.WriteLine($"Action  : {message}");
+                Console.ResetColor();
+            }
         }
 
         internal static void Error(string message)
         {
-            Console.ForegroundColor = ConsoleColor.Red;
-            Console.WriteLine($"Error   : {message}");
-            Console.ResetColor();
+            if (printError)
+            {
+                Console.ForegroundColor = errorColor;
+                Console.WriteLine($"Error   : {message}");
+                Console.ResetColor();
+            }
         }
 
         internal static void Info(string message)
         {
-            //Console.ForegroundColor = ConsoleColor.Green;
-            //Console.WriteLine($"Info    : {message}");
-            //Console.ResetColor();
+            if (printInfo)
+            {
+                Console.ForegroundColor = infoColor;
+                Console.WriteLine($"Info    : {message}");
+                Console.ResetColor();
+            }
         }
 
         internal static void Special(string message)
         {
-            Console.ForegroundColor = ConsoleColor.Cyan;
-            Console.WriteLine($"Special : {message}");
-            Console.ResetColor();
+            if (printSpecial)
+            {
+                Console.ForegroundColor = specialColor;
+                Console.WriteLine($"Special : {message}");
+                Console.ResetColor();
+            }
         }
     }
 
@@ -86,10 +103,7 @@ namespace ShogiWebsite
             return this;
         }
 
-        internal override string Build()
-        {
-            return $"{SelectorsToString()} {StylesToString()}";
-        }
+        internal override string Build() => $"{SelectorsToString()} {StylesToString()}";
 
         private string SelectorsToString()
         {
@@ -119,10 +133,7 @@ namespace ShogiWebsite
             return text + $"\n{Helper.RepeatString("  ", indentTabs)}}}";
         }
 
-        internal override CssBuilder Reset()
-        {
-            return new CssBuilder(indentTabs);
-        }
+        internal override CssBuilder Reset() => new(indentTabs);
     }
 
     /// <summary>easier way to dynamically write a text on multiple lines</summary>
@@ -151,10 +162,7 @@ namespace ShogiWebsite
             return this;
         }
 
-        internal override string Build()
-        {
-            return Build(false);
-        }
+        internal override string Build() => Build(false);
 
         internal string Build(bool has4SpaceTab)
         {
@@ -173,10 +181,7 @@ namespace ShogiWebsite
             return $"{Helper.RepeatString("  ", indentTabs + line.Value * (has4SpaceTab ? 2 : 1))}{line.Key}";
         }
 
-        internal override LinesBuilder Reset()
-        {
-            return new LinesBuilder(indentTabs);
-        }
+        internal override LinesBuilder Reset() => new(indentTabs);
     }
 
     internal class Color
@@ -189,51 +194,31 @@ namespace ShogiWebsite
         internal byte R
         {
             get => r;
-            set
-            {
-                r = value;
-                CalcRgba();
-            }
+            set { r = value; CalcRgba(); }
         }
 
         internal byte G
         {
             get => g;
-            set
-            {
-                g = value;
-                CalcRgba();
-            }
+            set { g = value; CalcRgba(); }
         }
 
         internal byte B
         {
             get => b;
-            set
-            {
-                b = value;
-                CalcRgba();
-            }
+            set { b = value; CalcRgba(); }
         }
 
         internal byte A
         {
             get => a;
-            set
-            {
-                a = value;
-                CalcRgba();
-            }
+            set { a = value; CalcRgba(); }
         }
 
         internal int Rgba
         {
             get => rgba;
-            set
-            {
-                rgba = value;
-                CalcRgbaBytes();
-            }
+            set { rgba = value; CalcRgbaBytes(); }
         }
 
         internal Color(byte r, byte g, byte b, byte a = 255)
@@ -265,15 +250,8 @@ namespace ShogiWebsite
             a = brgab[3];
         }
 
-        internal string RgbaHex()
-        {
-            return "#" + rgba.ToString("X");
-        }
+        internal string RgbaHex() => "#" + rgba.ToString("X");
 
-        internal string RgbHex()
-        {
-            string rgbas = RgbaHex();
-            return rgbas[..7];
-        }
+        internal string RgbHex() => RgbaHex()[..7];
     }
 }

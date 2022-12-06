@@ -1,6 +1,6 @@
-﻿using Blank.Shogi.Pieces;
+﻿using ShogiWebsite.Shogi.Pieces;
 
-namespace Blank.Shogi
+namespace ShogiWebsite.Shogi
 {
     internal class Square
     {
@@ -8,13 +8,13 @@ namespace Blank.Shogi
         internal readonly int colIndex;
         internal readonly string row;
         internal readonly int rowIndex;
-        internal AbstractPiece? piece;
+        internal Piece? piece;
         internal readonly Board board;
 
         internal static readonly string[] columns = { "9", "8", "7", "6", "5", "4", "3", "2", "1" };
         internal static readonly string[] rows = { "a", "b", "c", "d", "e", "f", "g", "h", "i" };
 
-        internal Square(int column, int row, AbstractPiece? piece, Board board)
+        internal Square(int column, int row, Piece? piece, Board board)
         {
             colIndex = column;
             this.column = columns[colIndex];
@@ -43,51 +43,45 @@ namespace Blank.Shogi
 
         internal Square? SquareAt(int column, int row) => IsOnBoard(column) && IsOnBoard(row) ? board.squares[column, row] : null;
 
-        internal Square? North(int n = 1, bool log = true) {
-            if (log) {
-                BC.Info($"Looking {n} squares north of {CoordinateString()}");
-            }
+        internal Square? North(int n = 1, bool log = true)
+        {
+            if (log) BetterConsole.Info($"Looking {n} squares north of {CoordinateString()}");
             int newRowIndex = rowIndex - n;
             return SquareAt(colIndex, newRowIndex);
         }
 
-        internal Square? South(int n = 1, bool log = true) {
-            if (log) {
-                BC.Info($"Looking {n} squares south of {CoordinateString()}");
-            }
+        internal Square? South(int n = 1, bool log = true)
+        {
+            if (log) BetterConsole.Info($"Looking {n} squares south of {CoordinateString()}");
             int newRowIndex = rowIndex + n;
             return SquareAt(colIndex, newRowIndex);
         }
 
-        internal Square? East(int n = 1, bool log = true) {
-            if (log) {
-                BC.Info($"Looking {n} squares east of {CoordinateString()}");
-            }
+        internal Square? East(int n = 1, bool log = true)
+        {
+            if (log) BetterConsole.Info($"Looking {n} squares east of {CoordinateString()}");
             int newColIndex = colIndex + n;
             return SquareAt(newColIndex, rowIndex);
         }
 
-        internal Square? West(int n = 1, bool log = true) {
-            if (log) {
-                BC.Info($"Looking {n} squares west of {CoordinateString()}");
-            }
-            int newColIndex = colIndex - n;;
+        internal Square? West(int n = 1, bool log = true)
+        {
+            if (log) BetterConsole.Info($"Looking {n} squares west of {CoordinateString()}");
+            int newColIndex = colIndex - n; ;
             return SquareAt(newColIndex, rowIndex);
         }
 
-        internal Square? NorthEast(int n = 1, bool log = true) {
-            if (log) {
-                BC.Info($"Looking {n} squares north east of {CoordinateString()}");
-            }
+        internal Square? NorthEast(int n = 1, bool log = true)
+        {
+            if (log) BetterConsole.Info($"Looking {n} squares north east of {CoordinateString()}");
             Square? north = North(n, false);
             if (north == null) return null;
             return north.East(n, false);
         }
 
-        internal Square? NorthWest(int n = 1, bool log = true) {
-            if (log) {
-                BC.Info($"Looking {n} squares north west of {CoordinateString()}");
-            }
+        internal Square? NorthWest(int n = 1, bool log = true)
+        {
+            if (log) BetterConsole.Info($"Looking {n} squares north west of {CoordinateString()}");
             Square? north = North(n, false);
             if (north == null) return null;
             return north.West(n, false);
@@ -95,9 +89,7 @@ namespace Blank.Shogi
 
         internal Square? SouthEast(int n = 1, bool log = true)
         {
-            if (log) {
-                BC.Info($"Looking {n} squares south east of {CoordinateString()}");
-            }
+            if (log) BetterConsole.Info($"Looking {n} squares south east of {CoordinateString()}");
             Square? south = South(n, false);
             if (south == null) return null;
             return south.East(n, false);
@@ -105,9 +97,7 @@ namespace Blank.Shogi
 
         internal Square? SouthWest(int n = 1, bool log = true)
         {
-            if (log) {
-                BC.Info($"Looking {n} squares north west of {CoordinateString()}.");
-            }
+            if (log) BetterConsole.Info($"Looking {n} squares north west of {CoordinateString()}.");
             Square? south = South(n, false);
             if (south == null) return null;
             return south.West(n, false);
@@ -117,7 +107,7 @@ namespace Blank.Shogi
         {
             string vert = isPlayer1 ? "north" : "south";
             string hori = left ? (isPlayer1 ? "west" : "east") : (isPlayer1 ? "east" : "west");
-            BC.Info($"Looking one knight's move {vert} {hori} of {CoordinateString()}.");
+            BetterConsole.Info($"Looking one knight's move {vert} {hori} of {CoordinateString()}.");
             Square? front = isPlayer1 ? North(2, false) : South(2, false);
             if (front == null) return null;
             if (left) return isPlayer1 ? front.West(1, false) : front.East(1, false);
@@ -133,13 +123,13 @@ namespace Blank.Shogi
             bool f3 = piece != null && piece.canPromote && !piece.isPromoted;
             string promotable = f1 && f2 && f3 ? " promotable" : "";
             string forcePromote = "";
-            if (f1 && f2 && f3) {
+            if (f1 && f2 && f3)
+            {
                 if (piece is Pawn or Lance) forcePromote = " forcePromo1";
                 else if (piece is Knight) forcePromote = " forcePromo2";
             }
             string text = $"<div id=\"{row}{column}\" class=\"square{promotable}{forcePromote}\"";
-            if (f1 && f2)
-                text += $" onclick=\"selectMoves(\'{row}{column}\');\"";
+            if (f1 && f2) text += $" onclick=\"selectMoves(\'{row}{column}\');\"";
             return text + $">\n{HtmlPieceImage()}\n</div>";
         }
 
@@ -153,8 +143,8 @@ namespace Blank.Shogi
         private string HtmlPieceImage()
         {
             string class_ = HtmlPieceClass();
-            string src = $"src=\"data:image/png;base64,{PieceImages.Get(piece)}\"";
-            string alt = $"alt=\"{PieceNames.Get(piece)}\"";
+            string src = $"src=\"data:image/png;base64,{Images.Get(piece)}\"";
+            string alt = $"alt=\"{Names.Get(piece)}\"";
             return $"<img {class_} {src} {alt}>";
         }
     }

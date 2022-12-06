@@ -1,13 +1,13 @@
 ﻿using System.Net.Sockets;
-using System.IO;
 using System.Text;
-using Blank.Shogi.Pieces;
-using Blank.Shogi;
-using Blank;
+using ShogiWebsite.Shogi;
+using ShogiWebsite;
 
 
-namespace Program {
-    class Program {
+namespace Program
+{
+    class Program
+    {
         internal static readonly string? projectDir = GetProjectDir();
         internal static string action = "";
         private static Board board = new();
@@ -17,37 +17,39 @@ namespace Program {
         private static readonly string endFunctions = Functions();
         private static readonly string title = Title("Shogi");
 
-        public static void Main() {
+        public static void Main()
+        {
             TcpListener listener = new(80);
             listener.Start();
-            while (true) {
-                BC.Special("Listening");
+            while (true)
+            {
+                BetterConsole.Special("Listening");
                 TcpClient client = listener.AcceptTcpClient();
-                BC.Special("Connected");
+                BetterConsole.Special("Connected");
                 NetworkStream stream = client.GetStream();
 
-                BC.Special("Waiting for Request");
+                BetterConsole.Special("Waiting for Request");
                 byte[] buffer = new byte[4096];
                 stream.Read(buffer, 0, buffer.Length);
-                // Console.Clear();
-                BC.Special("Reading Request");
+                BetterConsole.Special("Reading Request");
                 string text = Encoding.UTF8.GetString(buffer);
 
                 action = GetAction(text);
-                BC.Special($"Requested Action: {action}");
+                BetterConsole.Special($"Requested Action: {action}");
                 Action(action);
 
-                BC.Special($"Prepare everything for player {(board.isPlayer1Turn ? 1 : 2)}'s turn.");
+                BetterConsole.Special($"Prepare everything for player {(board.isPlayer1Turn ? 1 : 2)}'s turn.");
                 board.PlayerTurn();
-                BC.Special($"Finished preparations");
-                BC.Special($"Sending HTML document.");
+                BetterConsole.Special($"Finished preparations");
+                BetterConsole.Special($"Sending HTML document.");
                 stream.Write(AnswerHTML(board.isOver));
                 stream.Close();
             }
         }
 
-        internal static string? GetProjectDir() {
-            BC.Action("Find project directory.");
+        internal static string? GetProjectDir()
+        {
+            BetterConsole.Action("Find project directory.");
             string d1 = Directory.GetCurrentDirectory();
             DirectoryInfo? d2 = Directory.GetParent(d1);
             if (d2 == null) return null;
@@ -56,15 +58,18 @@ namespace Program {
             DirectoryInfo? d4 = d3.Parent;
             if (d4 == null) return null;
             string dir = d4.ToString();
-            BC.Info($"Found the project directory : \"{dir}\"");
+            BetterConsole.Info($"Found the project directory : \"{dir}\"");
             return dir;
         }
 
-        private static string GetAction(string text) {
+        private static string GetAction(string text)
+        {
             StringReader reader = new(text);
             string? line = reader.ReadLine();
-            while (line != null) {
-                if (line.Contains("move=")) {
+            while (line != null)
+            {
+                if (line.Contains("move="))
+                {
                     int start = line.LastIndexOf('=') + 1;
                     string action = line[start..];
                     return action.Replace("\0", string.Empty);
@@ -74,7 +79,8 @@ namespace Program {
             return "";
         }
 
-        private static string Functions() {
+        private static string Functions()
+        {
             List<LinesBuilder> builders = new();
             builders.Add(
                 new LinesBuilder(3)
@@ -128,7 +134,7 @@ namespace Program {
                 .Line("var curId = squares[i];", 3)
                 .Line("var elem = document.getElementById(curId);", 3)
                 .Line("elem.style.setProperty(\"background-color\", \"#7fffbf\");", 3)
-                .Line("if (shouldAskForPromotion(forId, curId)) {", 3) // Change so that the question doesn't pop up for lance, pawn and knight when they have no moves left.
+                .Line("if (shouldAskForPromotion(forId, curId)) {", 3)
                 .Line("elem.setAttribute(\"onclick\", `askPromotionFirst('${forId}','${curId}')`)", 4)
                 .Line("}", 3)
                 .Line("else {", 3)
@@ -170,23 +176,6 @@ namespace Program {
                 .Line("}", 1)
                 .Line("return false;", 1)
                 .Line("}"));
-            // Might delete later
-            builders.Add(
-                new LinesBuilder(3)
-                .Line("function deselectOldMoves() {")
-                .Line("var forId = sessionStorage.getItem(\"last\");", 1)
-                .Line("if (forId !== null) {", 1)
-                .Line("var squares = squareMoveDict[forId];", 2)
-                .Line("if (squares !== undefined) {", 2)
-                .Line("for (let i = 0; i < squares.length; i++) {", 3)
-                .Line("var curId = squares[i];", 4)
-                .Line("var elem = document.getElementById(curId);", 4)
-                .Line("elem.removeAttribute(\"style\");", 4)
-                .Line("elem.setAttribute(\"onclick\", `selectMoves('${curId}')`);", 4)
-                .Line("}", 3)
-                .Line("}", 2)
-                .Line("}", 1)
-                .Line("}"));
             builders.Add(
                 new LinesBuilder(3)
                 .Line("function resetMoves() {")
@@ -210,7 +199,8 @@ namespace Program {
             return text;
         }
 
-        private static string DefaultStyles() {
+        private static string DefaultStyles()
+        {
             List<CssBuilder> builders = new();
             // Explicit Variables, only make changes here
             int squareWidth = 64,
@@ -362,7 +352,7 @@ namespace Program {
             builders.Add(
                 new CssBuilder(3)
                 .Selector(".button:hover")
-                .Style("background-color", "#7fffbf")); // 104, 
+                .Style("background-color", "#7fffbf"));
             builders.Add(
                 new CssBuilder(3)
                 .Selector("#ask-promotion-overlay")
@@ -408,7 +398,8 @@ namespace Program {
         /// <returns>
         /// The entire HTML document as a byte array
         /// </returns>
-        private static byte[] AnswerHTML(bool isOver) {
+        private static byte[] AnswerHTML(bool isOver)
+        {
             LinesBuilder builder = new(0);
             builder
                 .Line("HTTP/1.1 200 OK")
@@ -483,47 +474,47 @@ namespace Program {
         /// Perform the action provided ny the <paramref name="actionCode"/>.
         /// </summary>
         /// <param name="actionCode">code that contains orders that tells the program what moves to do</param>
-        private static void Action(string actionCode) {
-            // actionCode : g7-a3  ;  [0:g , 1:7 , 2:- , 3:a , 4:3]  ;  row column - row column
-            // normal move : g7 - a3
+        private static void Action(string actionCode)
+        {
             bool switchPlayer = false;
             Player player = board.isPlayer1Turn ? board.player1 : board.player2;
             bool promotion = actionCode.Length == 6;
-            // BC.Error($"### Action Code is : {actionCode} ###");
-            // surrender, current player loses, don't restart immediately.
-            if (actionCode == "surrender") {
+            if (actionCode == "surrender")
+            {
                 board.EndGame(player.Opponent());
             }
-            // restart the game, current player loses (Only important for keeping scores), start a new game with a board immediately.
-            else if (actionCode == "restart") {
+            else if (actionCode == "restart")
+            {
                 if (!board.isOver) board.EndGame(player.Opponent());
                 board = new Board();
             }
-            else if (actionCode.Length == 5 || promotion) {
+            else if (actionCode.Length == 5 || promotion)
+            {
                 int r1 = Array.IndexOf(Square.rows, $"{actionCode[0]}");
                 int c1 = Array.IndexOf(Square.columns, $"{actionCode[1]}");
                 int r2 = Array.IndexOf(Square.rows, $"{actionCode[3]}");
                 int c2 = Array.IndexOf(Square.columns, $"{actionCode[4]}");
-                AbstractPiece? piece = board.squares[c1, r1].piece;
-                if (piece != null) {
+                Piece? piece = board.squares[c1, r1].piece;
+                if (piece != null)
+                {
                     if (piece.player.isPlayer1 == board.isPlayer1Turn)
                         switchPlayer = piece.Move(board.squares[c2, r2], promotion);
-                    else BC.Error("Wrong player on the move!");
+                    else BetterConsole.Error("Wrong player on the move!");
                 }
-                else BC.Error("There was no piece to move!");
+                else BetterConsole.Error("There was no piece to move!");
             }
-            // place piece from hand to board
-            else if (actionCode.Length == 4) {
+            else if (actionCode.Length == 4)
+            {
                 string abbr = $"{actionCode[0]}";
                 int r1 = Array.IndexOf(Square.rows, $"{actionCode[2]}");
                 int c1 = Array.IndexOf(Square.columns, $"{actionCode[3]}");
-                AbstractPiece? piece = player.PieceFromHandByAbbr(abbr);
+                Piece? piece = player.PieceFromHandByAbbr(abbr);
                 if (piece != null)
                     switchPlayer = piece.MoveFromHand(board.squares[c1, r1]);
-                else BC.Error("There was no piece to move!");
+                else BetterConsole.Error("There was no piece to move!");
             }
-            // change players if the turn was successful
-            if (switchPlayer) {
+            if (switchPlayer)
+            {
                 if (board.isPlayer1Turn) board.isPlayer1Turn = false;
                 else board.isPlayer1Turn = true;
             }
