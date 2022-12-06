@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <style>
+    .class1 {
+      border: 2px solid black;
+      height: 50px;
+      width: 100px;
+      margin: 0 auto;
+      text-align: center;
+      background-color: #7f7f7f;
+    }
+  </style>
+  <script>
+    function byClassAsArray(element_class) {
+      return Array.from(document.getElementsByClassName(element_class));
+    }
+
+    function changeBackground(element_class, newColor) {
+      removeBackground(element_class);
+      elements = byClassAsArray(element_class);  // .style.setProperty("background-color", newColor);
+      for (let i = 0; i < elements.length; i++) {
+        elements[i].style.setProperty("background-color", newColor);
+        elements[i].innerHTML = "<a href=\"click" + newColor + "\">" + elements[i].innerHTML + "</a>";
+      }
+    }
+
+    function removeBackground(element_class) {
+      elements = byClassAsArray(element_class);
+      for (let i = 0; i < elements.length; i++) {
+        elements[i].removeAttribute("style");
+        var inner = elements[i].innerHTML;
+        if (inner.includes("<a href=")) {
+          elements[i].innerHTML = inner.substring(inner.indexOf(">") + 1, inner.lastIndexOf("<"));
+          var elem = elements[i];
+        }
+      }
+    }
+  </script>
+</head>
+
+<body>
+  <div class="class1" onclick="changeBackground('class1', '#ff7f7f');">Red</div>
+  <div class="class1" onclick="changeBackground('class1', '#ffbf7f');">Orange</div>
+  <div class="class1" onclick="changeBackground('class1', '#ffff7f');">Yellow</div>
+  <div class="class1" onclick="changeBackground('class1', '#bfff7f');">Lime</div>
+  <div class="class1" onclick="changeBackground('class1', '#7fff7f');">Green</div>
+  <div class="class1" onclick="changeBackground('class1', '#7fffbf');">Mint</div>
+  <div class="class1" onclick="changeBackground('class1', '#7fffff');">Cyan</div>
+  <div class="class1" onclick="changeBackground('class1', '#7fbfff');">Blue</div>
+  <div class="class1" onclick="changeBackground('class1', '#7f7fff');">Violet</div>
+  <div class="class1" onclick="changeBackground('class1', '#ffffff');">White</div>
+  <div class="class1" onclick="changeBackground('class1', '#7f7f7f');">Gray</div>
+  <div class="class1" onclick="changeBackground('class1', '#000000');">Black</div>
+  <button type="button" onclick="removeBackground('class1')">Set Back To Normal</button>
+</body>
+
+</html>
