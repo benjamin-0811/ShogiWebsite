@@ -73,11 +73,7 @@
         internal override void ForcePromote()
         {
             int row = square.rowIndex;
-            if (!isPromoted && (player.isPlayer1 ? row == 0 : row == 8))
-            {
-                BetterConsole.Action($"Forcing promotion of {IdentifyingString()}.");
-                Promote();
-            }
+            if (!isPromoted && (player.isPlayer1 ? row == 0 : row == 8)) Promote();
         }
     }
 }

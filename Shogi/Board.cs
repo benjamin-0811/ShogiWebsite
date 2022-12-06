@@ -41,8 +41,8 @@ namespace ShogiWebsite.Shogi
         internal Square? GetSquareByCoordinate(string coordinate)
         {
             if (coordinate.Length != 2) return null;
-            int row = Array.IndexOf(Square.rows, $"{coordinate[0]}");
-            int column = Array.IndexOf(Square.columns, $"{coordinate[1]}");
+            int row = Array.IndexOf(Square.rows, coordinate[0]);
+            int column = Array.IndexOf(Square.columns, coordinate[1]);
             return nullSquare.SquareAt(column, row);
         }
 
@@ -100,13 +100,13 @@ namespace ShogiWebsite.Shogi
 
         }
 
-        internal string ToHtml(bool isOver)
+        internal string ToHtml()
         {
             string text = "<div class=\"board\">\n";
             for (int i = 0; i < 9; i++)
             {
                 string subText = "";
-                for (int j = 0; j < 9; j++) subText += squares[j, i].ToHtml(isOver);
+                for (int j = 0; j < 9; j++) subText += squares[j, i].ToHtml();
                 text += $"<div class=\"row\">{subText}</div>";
             }
             return text + "</div>";

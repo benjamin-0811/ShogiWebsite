@@ -4,15 +4,15 @@ namespace ShogiWebsite.Shogi
 {
     internal class Square
     {
-        internal readonly string column;
+        internal readonly char column;
         internal readonly int colIndex;
-        internal readonly string row;
+        internal readonly char row;
         internal readonly int rowIndex;
         internal Piece? piece;
         internal readonly Board board;
 
-        internal static readonly string[] columns = { "9", "8", "7", "6", "5", "4", "3", "2", "1" };
-        internal static readonly string[] rows = { "a", "b", "c", "d", "e", "f", "g", "h", "i" };
+        internal static readonly char[] columns = { '9', '8', '7', '6', '5', '4', '3', '2', '1' };
+        internal static readonly char[] rows = { 'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i' };
 
         internal Square(int column, int row, Piece? piece, Board board)
         {
@@ -27,7 +27,7 @@ namespace ShogiWebsite.Shogi
         /// <summary>null-square<br/>no column, row or piece</summary>
         internal Square(Board board)
         {
-            column = row = "null";
+            column = row = '-';
             colIndex = rowIndex = -1;
             piece = null;
             this.board = board;
@@ -116,28 +116,27 @@ namespace ShogiWebsite.Shogi
 
         internal Square? KnightMove(Player player, bool left) => KnightMove(player.isPlayer1, left);
 
-        internal string? ToHtml(bool isOver)
+        internal string? ToHtml()
         {
-            bool f1 = piece != null && board.isPlayer1Turn == piece.player.isPlayer1;
-            bool f2 = !isOver;
-            bool f3 = piece != null && piece.canPromote && !piece.isPromoted;
-            string promotable = f1 && f2 && f3 ? " promotable" : "";
+            bool isPlayersTurn = piece != null && board.IsPlayersTurn(piece.player);
+            bool notOver = !board.isOver;
+            bool isPromotable = piece != null && piece.canPromote && !piece.IsPromoted();
+            string promotable = isPlayersTurn && notOver && isPromotable ? " promotable" : "";
             string forcePromote = "";
-            if (f1 && f2 && f3)
+            if (isPlayersTurn && notOver && isPromotable)
             {
                 if (piece is Pawn or Lance) forcePromote = " forcePromo1";
                 else if (piece is Knight) forcePromote = " forcePromo2";
             }
             string text = $"<div id=\"{row}{column}\" class=\"square{promotable}{forcePromote}\"";
-            if (f1 && f2) text += $" onclick=\"selectMoves(\'{row}{column}\');\"";
+            if (isPlayersTurn && notOver) text += $" onclick=\"selectMoves(\'{row}{column}\');\"";
             return text + $">\n{HtmlPieceImage()}\n</div>";
         }
 
         private string HtmlPieceClass()
         {
             if (piece == null) return "";
-            string color = piece.player.isPlayer1 ? "black" : "white";
-            return $"class=\"{color}-piece\"";
+            return $"class=\"{(piece.player.isPlayer1 ? "black" : "white")}-piece\"";
         }
 
         private string HtmlPieceImage()

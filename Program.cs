@@ -41,7 +41,7 @@ namespace ShogiWebsite
                 board.PlayerTurn();
                 BetterConsole.Special($"Finished preparations");
                 BetterConsole.Special($"Sending HTML document.");
-                stream.Write(AnswerHTML(board.isOver));
+                stream.Write(AnswerHTML());
                 stream.Close();
             }
         }
@@ -389,15 +389,7 @@ namespace ShogiWebsite
 
         private static string Title(string text) => $"<title>{text}</title>";
 
-        /// <summary>
-        /// Write the entire answer to send to the players.
-        /// The entire HTML document is written and converted here.
-        /// </summary>
-        /// <param name="isOver">Is the game over?</param>
-        /// <returns>
-        /// The entire HTML document as a byte array
-        /// </returns>
-        private static byte[] AnswerHTML(bool isOver)
+        private static byte[] AnswerHTML()
         {
             LinesBuilder builder = new(0);
             builder
@@ -406,72 +398,70 @@ namespace ShogiWebsite
                 .EmptyLine()
                 .Line("<!DOCTYPE html>")
                 .EmptyLine()
-                    .Line("<html>")
-                    .Line("<head>", 1)
-                    .Line("<meta content=\"text/html; charset=ISO-8859-1\" http-equiv=\"content-type\">", 2)
-                    .Line("<style>", 2)
-                    .Line(defaultStyles)
-                    .Line("</style>", 2)
-                    .Line("<script>", 2)
-                    .Line("sessionStorage.clear();", 3)
-                    .EmptyLine()
-                    .Line(board.PromotionZone(), 3)
-                    .Line(board.ForcePawnLancePromotion(), 3)
-                    .Line(board.ForceKnightPromotion(), 3)
-                    .EmptyLine()
-                    .Line(board.JavascriptMoveLists())
-                    .EmptyLine()
-                    .Line(functions)
-                    .Line("</script>", 2)
-                    .Line(title, 2)
-                    .Line("</head>", 1)
-                    .EmptyLine()
-                    .Line("<body>", 1)
-                    .Line("<main>")
+                .Line("<html>")
+                .Line("<head>", 1)
+                .Line("<meta content=\"text/html; charset=ISO-8859-1\" http-equiv=\"content-type\">", 2)
+                .Line("<style>", 2)
+                .Line(defaultStyles)
+                .Line("</style>", 2)
+                .Line("<script>", 2)
+                .Line("sessionStorage.clear();", 3)
+                .EmptyLine()
+                .Line(board.PromotionZone(), 3)
+                .Line(board.ForcePawnLancePromotion(), 3)
+                .Line(board.ForceKnightPromotion(), 3)
+                .EmptyLine()
+                .Line(board.JavascriptMoveLists())
+                .EmptyLine()
+                .Line(functions)
+                .Line("</script>", 2)
+                .Line(title, 2)
+                .Line("</head>", 1)
+                .EmptyLine()
+                .Line("<body>", 1)
+                .Line("<main>")
 
-                    .Line("<div id=\"ask-promotion-overlay\">")
-                    .Line("<div style=\"background-color:#ffffff;border:2px solid #000000;width:600px;heigth:300px;\">")
-                    .Line("<p>Promote?</p>")
-                    .Line("<div id=\"do-promote\" class=\"button\">")
-                    .Line("Yes")
-                    .Line("</div>")
-                    .Line("<div id=\"dont-promote\" class=\"button\">")
-                    .Line("No")
-                    .Line("</div>")
-                    .Line("</div>")
-                    .Line("</div>")
+                .Line("<div id=\"ask-promotion-overlay\">")
+                .Line("<div style=\"background-color:#ffffff;border:2px solid #000000;width:600px;heigth:300px;\">")
+                .Line("<p>Promote?</p>")
+                .Line("<div id=\"do-promote\" class=\"button\">")
+                .Line("Yes")
+                .Line("</div>")
+                .Line("<div id=\"dont-promote\" class=\"button\">")
+                .Line("No")
+                .Line("</div>")
+                .Line("</div>")
+                .Line("</div>")
 
-                    .Line(board.GameEndHtml())
+                .Line(board.GameEndHtml())
 
-                    .Line("<div style=\"width:836px;margin:0 auto;\">")
-                    .Line("<div id=\"board\" style=\"float:left;\">")
-                    .Line(board.player2.HtmlHand(isOver), 2)
-                    .Line(board.ToHtml(isOver), 2)
-                    .Line(board.player1.HtmlHand(isOver), 2)
-                    .Line("</div>")
-                    .Line("<div id=\"side\" style=\"float:left; margin-left:16px;\">")
-                    .Line(board.LogToHtml())
-                    .Line("<div id=\"surrender_button\" class=\"button\" onclick=\"surrender();\">")
-                    .Line("Surrender", 2)
-                    .Line("</div>")
-                    .Line("<div id=\"restart_button\" class=\"button\" onclick=\"restart();\">")
-                    .Line("Restart", 2)
-                    .Line("</div>")
-                    .Line("</div>")
-                    .Line("</div>")
-                    .Line("</main>")
-                    .Line("<form id=\"moveForm\" action=\"\" method=\"post\">", 2)
-                    .Line("<input type=\"hidden\" id=\"move\" name=\"move\" value=\"\">", 3)
-                    .Line("</form>", 2)
-                    .Line("</body>", 1)
-                    .Line("</html>");
+                .Line("<div style=\"width:836px;margin:0 auto;\">")
+                .Line("<div id=\"board\" style=\"float:left;\">")
+                .Line(board.player2.HtmlHand(), 2)
+                .Line(board.ToHtml(), 2)
+                .Line(board.player1.HtmlHand(), 2)
+                .Line("</div>")
+                .Line("<div id=\"side\" style=\"float:left; margin-left:16px;\">")
+                .Line(board.LogToHtml())
+                .Line("<div id=\"surrender_button\" class=\"button\" onclick=\"surrender();\">")
+                .Line("Surrender", 2)
+                .Line("</div>")
+                .Line("<div id=\"restart_button\" class=\"button\" onclick=\"restart();\">")
+                .Line("Restart", 2)
+                .Line("</div>")
+                .Line("</div>")
+                .Line("</div>")
+                .Line("</main>")
+                .Line("<form id=\"moveForm\" action=\"\" method=\"post\">", 2)
+                .Line("<input type=\"hidden\" id=\"move\" name=\"move\" value=\"\">", 3)
+                .Line("</form>", 2)
+                .Line("</body>", 1)
+                .Line("</html>");
             string text = builder.Build();
             return Encoding.UTF8.GetBytes(text);
         }
 
-        /// <summary>
-        /// Perform the action provided ny the <paramref name="actionCode"/>.
-        /// </summary>
+        /// <summary>Perform the action provided by the <paramref name="actionCode"/>.</summary>
         /// <param name="actionCode">code that contains orders that tells the program what moves to do</param>
         private static void Action(string actionCode)
         {
@@ -489,14 +479,14 @@ namespace ShogiWebsite
             }
             else if (actionCode.Length == 5 || promotion)
             {
-                int r1 = Array.IndexOf(Square.rows, $"{actionCode[0]}");
-                int c1 = Array.IndexOf(Square.columns, $"{actionCode[1]}");
-                int r2 = Array.IndexOf(Square.rows, $"{actionCode[3]}");
-                int c2 = Array.IndexOf(Square.columns, $"{actionCode[4]}");
+                int r1 = Array.IndexOf(Square.rows, actionCode[0]);
+                int c1 = Array.IndexOf(Square.columns, actionCode[1]);
+                int r2 = Array.IndexOf(Square.rows, actionCode[3]);
+                int c2 = Array.IndexOf(Square.columns, actionCode[4]);
                 Piece? piece = board.squares[c1, r1].piece;
                 if (piece != null)
                 {
-                    if (piece.player.isPlayer1 == board.isPlayer1Turn)
+                    if (board.IsPlayersTurn(piece.player))
                         switchPlayer = piece.Move(board.squares[c2, r2], promotion);
                     else BetterConsole.Error("Wrong player on the move!");
                 }
@@ -505,8 +495,8 @@ namespace ShogiWebsite
             else if (actionCode.Length == 4)
             {
                 string abbr = $"{actionCode[0]}";
-                int r1 = Array.IndexOf(Square.rows, $"{actionCode[2]}");
-                int c1 = Array.IndexOf(Square.columns, $"{actionCode[3]}");
+                int r1 = Array.IndexOf(Square.rows, actionCode[2]);
+                int c1 = Array.IndexOf(Square.columns, actionCode[3]);
                 Piece? piece = player.PieceFromHandByAbbr(abbr);
                 if (piece != null)
                     switchPlayer = piece.MoveFromHand(board.squares[c1, r1]);

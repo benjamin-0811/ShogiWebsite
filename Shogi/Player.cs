@@ -4,8 +4,8 @@ namespace ShogiWebsite.Shogi
 {
     internal class Player
     {
-        internal Board board;
-        internal bool isPlayer1;
+        internal readonly Board board;
+        internal readonly bool isPlayer1;
         internal List<Piece> boardPieces;
         internal KeyValuePair<Piece, int>[] hand;
         internal King king;
@@ -34,13 +34,15 @@ namespace ShogiWebsite.Shogi
             king = PlayersKing();
         }
 
+        internal string PlayerNumber() => $"Player {(isPlayer1 ? 1 : 2)}";
+
         /// <summary>
         /// Call after the opponent's turn, before preparing this player's move.
         /// </summary>
         internal void AfterOpponent()
         {
             isCheck = isCheckmate = false;
-            BetterConsole.Action($"Setup Player {(isPlayer1 ? 1 : 2)}'s turn.");
+            BetterConsole.Action($"Setup {PlayerNumber()}'s turn.");
             boardPieces = PlayersPieces();
             Opponent().boardPieces = Opponent().PlayersPieces();
             isCheck = king.IsCheck();
@@ -62,7 +64,7 @@ namespace ShogiWebsite.Shogi
         /// </summary>
         internal void PrepareTurn()
         {
-            BetterConsole.Action($"Prepare Player {(isPlayer1 ? 1 : 2)}'s turn.");
+            BetterConsole.Action($"Prepare {PlayerNumber()}'s turn.");
             if (isCheckmate)
             {
                 board.EndGame(Opponent());
@@ -215,7 +217,7 @@ namespace ShogiWebsite.Shogi
         };
 
         /// <summary>Convert the player's hand to its HTML representation.</summary>
-        internal string HtmlHand(bool isOver)
+        internal string HtmlHand()
         {
             string text = "<div class=\"hand\">";
             foreach (KeyValuePair<Piece, int> handPiece in hand)
@@ -224,7 +226,7 @@ namespace ShogiWebsite.Shogi
                 int amount = handPiece.Value;
                 string image = Images.Get(piece);
                 text += $"<div class=\"handPiece\" style=\"background-image:url('data:image/png;base64,{image}')\"";
-                if (amount > 0 && board.IsPlayersTurn(this) && !isOver)
+                if (amount > 0 && board.IsPlayersTurn(this) && !board.isOver)
                 {
                     string abbr = Names.Abbreviation(piece);
                     text += $" id=\"{abbr}\" onclick=\"selectMoves('{abbr}')\"";

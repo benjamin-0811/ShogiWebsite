@@ -12,9 +12,9 @@
 
         internal bool WouldBeCheckAt(Square at)
         {
-            Square? nLeft = at.KnightMove(player.isPlayer1, true);
+            Square? nLeft = at.KnightMove(player, true);
             if (nLeft != null && nLeft.piece is Knight && DifferentPlayer(nLeft)) return true;
-            Square? nRight = at.KnightMove(player.isPlayer1, false);
+            Square? nRight = at.KnightMove(player, false);
             if (nRight != null && nRight.piece is Knight && DifferentPlayer(nRight)) return true;
             List<Square?> squares = new()
             {

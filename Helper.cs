@@ -103,6 +103,19 @@ namespace ShogiWebsite
             return this;
         }
 
+        internal CssBuilder DeleteSytle(string key)
+        {
+            foreach(var s in styles)
+            {
+                if (s.Key == key)
+                {
+                    styles.Remove(s);
+                    break;
+                }
+            }
+            return this;
+        }
+
         internal override string Build() => $"{SelectorsToString()} {StylesToString()}";
 
         private string SelectorsToString()
@@ -161,6 +174,14 @@ namespace ShogiWebsite
             lines.Add(new KeyValuePair<string, int>("", 0));
             return this;
         }
+
+        internal LinesBuilder RemoveLine(int index)
+        {
+            if (index < lines.Count) lines.RemoveAt(index);
+            return this;
+        }
+
+        internal LinesBuilder RemoveLastLine() => RemoveLine(lines.Count - 1);
 
         internal override string Build() => Build(false);
 

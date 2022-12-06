@@ -9,7 +9,6 @@ namespace ShogiWebsite.Shogi
         internal readonly bool canPromote;
         internal Board board;
         internal Square square;
-        internal bool isOnBoard;
 
         /// <summary>Constructor for a piece on the board</summary>
         internal Piece(Player player, bool canPromote, Square square)
@@ -19,7 +18,6 @@ namespace ShogiWebsite.Shogi
             this.canPromote = canPromote;
             board = square.board;
             this.square = square;
-            isOnBoard = true;
         }
 
         /// <summary>Piece on hand.<br/>Does not contain an actual square on the board</summary>
@@ -30,7 +28,6 @@ namespace ShogiWebsite.Shogi
             this.canPromote = canPromote;
             this.board = board;
             square = board.nullSquare;
-            isOnBoard = false;
         }
 
         /// <summary>
@@ -43,11 +40,11 @@ namespace ShogiWebsite.Shogi
         /// <returns><c>true</c> if this move was successful</returns>
         internal bool Move(Square to, bool doesPromote)
         {
-            var s = FindMoves();
+            var moves = FindMoves();
             string piece1S = IdentifyingString();
             string toS = to.CoordinateString();
             BetterConsole.Info($"Trying to move {piece1S} to {toS}.");
-            if (s != null && s.Contains(to))
+            if (moves != null && moves.Contains(to))
             {
                 string piece2S = "";
                 Square old = square;
@@ -71,7 +68,7 @@ namespace ShogiWebsite.Shogi
                 ForcePromote();
                 if (wasPromoted != isPromoted) doesPromote = true;
                 string part2 = $"{moveType}{to.CoordinateString()}{(doesPromote ? "+" : "")}";
-                board.log.Add($"Player {(player.isPlayer1 ? 1 : 2)} : {part1}{part2}");
+                board.log.Add($"{player.PlayerNumber()} : {part1}{part2}");
                 if (doesPromote) isPromoted = true;
                 return true;
             }
@@ -87,19 +84,18 @@ namespace ShogiWebsite.Shogi
         /// <returns><c>true</c> if this move was successful</returns>
         internal bool MoveFromHand(Square to)
         {
-            var s = FindDrops();
+            var drops = FindDrops();
             Piece? piece = to.piece;
             string pieceS = IdentifyingString();
             string toS = to.CoordinateString();
             BetterConsole.Info($"Trying to drop {pieceS} on {toS}.");
-            if (s != null && s.Contains(to) && piece == null && piece is not King)
+            if (drops != null && drops.Contains(to) && piece == null && this is not King)
             {
                 player.ChangeHandPieceAmount(this, -1);
-                BetterConsole.Action($"Removed 1 {Names.Get(this)} from Player {(player.isPlayer1 ? "1" : "2")}'s hand.");
+                BetterConsole.Action($"Removed 1 {Names.Get(this)} from {player.PlayerNumber()}'s hand.");
                 to.piece = this;
-                to.piece.isOnBoard = true;
                 square = to;
-                board.log.Add($"Player {(player.isPlayer1 ? 1 : 2)} : {Names.Abbreviation(this)}*{to.column}{to.row}");
+                board.log.Add($"{player.PlayerNumber()} : {Names.Abbreviation(this)}*{to.column}{to.row}");
                 BetterConsole.Action($"Dropped {pieceS} on {toS}.");
                 return true;
             }
@@ -140,7 +136,7 @@ namespace ShogiWebsite.Shogi
             else BetterConsole.Error($"{pieceS} cannot be promoted!");
         }
 
-        internal string IdentifyingString() => $"Player {(player.isPlayer1 ? "1" : "2")}'s {Names.Get(this)} on {square.CoordinateString()}";
+        internal string IdentifyingString() => $"{player.PlayerNumber()}'s {Names.Get(this)} on {square.CoordinateString()}";
 
         internal virtual void ForcePromote() { }
 
@@ -150,7 +146,6 @@ namespace ShogiWebsite.Shogi
         {
             BetterConsole.Info($"See if {IdentifyingString()} can move to {square.CoordinateString()}.");
             IEnumerable<Square> availableSquares = FindMoves();
-            if (availableSquares == null) return false;
             return availableSquares.Contains(square);
         }
 
@@ -180,7 +175,6 @@ namespace ShogiWebsite.Shogi
         {
             for (int i = 0; i < directions.Length; i++)
             {
-                // Square? temp = square;
                 int distance = 1;
                 bool flag = true;
                 while (flag)
@@ -194,7 +188,6 @@ namespace ShogiWebsite.Shogi
             }
         }
 
-        // See if I should add the ability to use different distances, as of now it seems kinda useless.
         /// <summary>Find one square in each of the given <paramref name="directions"/>.</summary>
         protected IEnumerable<Square> ListMoves(Func<int, bool, Square?>[] directions)
         {
