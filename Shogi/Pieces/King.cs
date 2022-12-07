@@ -12,52 +12,25 @@
 
         internal bool WouldBeCheckAt(Square at)
         {
-            Square? nLeft = at.KnightMove(player, true);
-            if (nLeft != null && nLeft.piece is Knight && DifferentPlayer(nLeft)) return true;
-            Square? nRight = at.KnightMove(player, false);
-            if (nRight != null && nRight.piece is Knight && DifferentPlayer(nRight)) return true;
-            List<Square?> squares = new()
+            bool result = false;
+            // Save old state
+            Square kingSquare = square;
+            Piece? atPiece = at.piece;
+            // Create new state
+            at.piece = this;
+            square = at;
+            kingSquare.piece = atPiece;
+            if(atPiece != null) atPiece.square = kingSquare;
+            // See if king would be in check
+            foreach(var opponentMoves in player.Opponent().GetMoveLists())
             {
-                at.North(),
-                at.NorthEast(),
-                at.East(),
-                at.SouthEast(),
-                at.South(),
-                at.SouthWest(),
-                at.West(),
-                at.NorthWest()
-            }; //GetMoves();
-            foreach (var square in squares)
-            {
-                if (square == null) continue;
-                Piece? piece = square.piece;
-                if (piece != null && piece.player != player)
-                {
-                    var availabeSquares = piece.FindMoves();
-                    if (availabeSquares.Contains(at)) return true;
-                }
+                if (opponentMoves.Value.Contains(at)) result = true;
             }
-            if (WouldBeCheckedBy<Bishop>(at)) return true;
-            if (WouldBeCheckedBy<Rook>(at)) return true;
-            if (WouldBeCheckedBy<Lance>(at)) return true;
-            return false;
-        }
+            // Return to old state
+            square = kingSquare;
+            kingSquare.piece = this;
 
-        private bool WouldBeCheckedBy<T>(Square at) where T : Piece
-        {
-            List<T> allPieces = player.Opponent().AllPiecesOfType<T>();
-            square.piece = null;
-            foreach (var piece in allPieces)
-            {
-                var availableSquares = piece.FindMoves();
-                if (availableSquares.Contains(at))
-                {
-                    square.piece = this;
-                    return true;
-                }
-            }
-            square.piece = this;
-            return false;
+            return result;
         }
 
         internal bool IsCheck() => WouldBeCheckAt(square);
