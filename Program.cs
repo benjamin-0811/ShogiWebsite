@@ -193,8 +193,7 @@ namespace ShogiWebsite
             int length = builders.Count;
             if (length <= 0) return "";
             string text = builders[0].Build();
-            for (int i = 1; i < length; i++)
-                text += $"\n\n{builders[i].Build()}";
+            for (int i = 1; i < length; i++) text += $"\n\n{builders[i].Build()}";
             return text;
         }
 
@@ -382,8 +381,7 @@ namespace ShogiWebsite
             int length = builders.Count;
             if (length <= 0) return "";
             string text = builders[0].Build();
-            for (int i = 1; i < length; i++)
-                text += $"\n{builders[i].Build()}";
+            for (int i = 1; i < length; i++) text += $"\n{builders[i].Build()}";
             return text;
         }
 
@@ -468,10 +466,7 @@ namespace ShogiWebsite
             bool switchPlayer = false;
             Player player = board.isPlayer1Turn ? board.player1 : board.player2;
             bool promotion = actionCode.Length == 6;
-            if (actionCode == "surrender")
-            {
-                board.EndGame(player.Opponent());
-            }
+            if (actionCode == "surrender") board.EndGame(player.Opponent());
             else if (actionCode == "restart")
             {
                 if (!board.isOver) board.EndGame(player.Opponent());
@@ -486,8 +481,7 @@ namespace ShogiWebsite
                 Piece? piece = board.squares[c1, r1].piece;
                 if (piece != null)
                 {
-                    if (board.IsPlayersTurn(piece.player))
-                        switchPlayer = piece.Move(board.squares[c2, r2], promotion);
+                    if (board.IsPlayersTurn(piece.player)) switchPlayer = piece.Move(board.squares[c2, r2], promotion);
                     else BetterConsole.Error("Wrong player on the move!");
                 }
                 else BetterConsole.Error("There was no piece to move!");
@@ -498,15 +492,10 @@ namespace ShogiWebsite
                 int r1 = Array.IndexOf(Square.rows, actionCode[2]);
                 int c1 = Array.IndexOf(Square.columns, actionCode[3]);
                 Piece? piece = player.PieceFromHandByAbbr(abbr);
-                if (piece != null)
-                    switchPlayer = piece.MoveFromHand(board.squares[c1, r1]);
+                if (piece != null) switchPlayer = piece.MoveFromHand(board.squares[c1, r1]);
                 else BetterConsole.Error("There was no piece to move!");
             }
-            if (switchPlayer)
-            {
-                if (board.isPlayer1Turn) board.isPlayer1Turn = false;
-                else board.isPlayer1Turn = true;
-            }
+            if (switchPlayer) board.isPlayer1Turn = !board.isPlayer1Turn;
         }
     }
 }

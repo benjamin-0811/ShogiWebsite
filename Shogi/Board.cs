@@ -13,20 +13,15 @@ namespace ShogiWebsite.Shogi
         internal List<string> log;
         internal bool isOver;
         internal Player? winner;
+        internal Phase phase;
+        internal Square? chosenSquare;
 
         internal Board()
         {
             // Square [ column , row ]
             player1 = new Player(this, true);
             player2 = new Player(this, false);
-            squares = new Square[9, 9];
-            for (int i = 0; i < 9; i++)
-            {
-                for (int j = 0; j < 9; j++)
-                {
-                    squares[i, j] = new Square(i, j, null, this);
-                }
-            }
+            squares = InitSquares();
             InitPieces();
             //InitCheckMate();
             isPlayer1Turn = true;
@@ -34,8 +29,17 @@ namespace ShogiWebsite.Shogi
             log = new();
             isOver = false;
             winner = null;
+            phase = Phase.ChoosePiece;
+            chosenSquare = null;
             player1.InitLater();
             player2.InitLater();
+        }
+
+        internal enum Phase
+        {
+            ChoosePiece,
+            AskForPromotion,
+            SelectTarget
         }
 
         internal Square? GetSquareByCoordinate(string coordinate)
@@ -46,7 +50,17 @@ namespace ShogiWebsite.Shogi
             return nullSquare.SquareAt(column, row);
         }
 
-        internal void InitPieces()
+        private Square[,] InitSquares()
+        {
+            Square[,] squares = new Square[9, 9];
+            for (int i = 0; i < 9; i++)
+            {
+                for (int j = 0; j < 9; j++) squares[i, j] = new Square(i, j, null, this);
+            }
+            return squares;
+        }
+
+        private void InitPieces()
         {
             BetterConsole.Action("Setup all pieces on the board");
             // Pawn

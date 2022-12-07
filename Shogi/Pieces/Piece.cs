@@ -52,8 +52,8 @@ namespace ShogiWebsite.Shogi
                 char moveType = '-';
                 if (piece != null && piece.player != player)
                 {
-                    BetterConsole.Info($"There is {piece2S}.");
                     piece2S = piece.IdentifyingString();
+                    BetterConsole.Info($"There is {piece2S}.");
                     if (piece is not King)
                     {
                         player.ChangeHandPieceAmount(piece, 1);
@@ -208,8 +208,7 @@ namespace ShogiWebsite.Shogi
         {
             if (square == null) return false;
             Piece? piece = square.piece;
-            if (piece == null) return true;
-            return false;
+            return piece == null;
         }
 
         /// <summary>
@@ -220,9 +219,7 @@ namespace ShogiWebsite.Shogi
         protected bool IsAvailableSquare(Square square)
         {
             Piece? piece = square.piece;
-            if (piece == null) return true;
-            if (piece.player == player) return false;
-            return true;
+            return piece == null || piece.player != player;
         }
 
         /// <summary>Checks if a square in a set distance is available</summary>
@@ -235,8 +232,7 @@ namespace ShogiWebsite.Shogi
         protected virtual Square? GetSquareIfAvailable(Func<int, bool, Square?> func, int n = 1)
         {
             Square? square = func(n, true);
-            if (square != null && IsAvailableSquare(square)) return square;
-            return null;
+            return square != null && IsAvailableSquare(square) ? square : null;
         }
 
         internal bool DifferentPlayer(Square square)

@@ -97,8 +97,7 @@ namespace ShogiWebsite
                     break;
                 }
             }
-            if (style != null)
-                styles.Remove((KeyValuePair<string, string>)style);
+            if (style != null) styles.Remove((KeyValuePair<string, string>)style);
             styles.Add(new KeyValuePair<string, string>(key, value));
             return this;
         }
@@ -123,8 +122,7 @@ namespace ShogiWebsite
             int length = selectors.Count;
             if (length <= 0) return "";
             string text = $"{Helper.RepeatString("  ", indentTabs)}";
-            for (int i = 0; i < length - 1; i++)
-                text += $"{selectors[i]}, ";
+            for (int i = 0; i < length - 1; i++) text += $"{selectors[i]}, ";
             return text += $"{selectors[length - 1]}";
         }
 
@@ -141,8 +139,7 @@ namespace ShogiWebsite
             int length = styles.Count;
             if (length <= 0) return "{ }";
             string text = "{";
-            for (int i = 0; i < length; i++)
-                text += $"\n{Helper.RepeatString("  ", indentTabs + 2)}{StyleToString(i)}";
+            for (int i = 0; i < length; i++) text += $"\n{Helper.RepeatString("  ", indentTabs + 2)}{StyleToString(i)}";
             return text + $"\n{Helper.RepeatString("  ", indentTabs)}}}";
         }
 
@@ -190,8 +187,7 @@ namespace ShogiWebsite
             int length = lines.Count;
             if (length <= 0) return "";
             string text = WriteLine(0, has4SpaceTab);
-            for (int i = 1; i < length; i++)
-                text += $"\n{WriteLine(i, has4SpaceTab)}";
+            for (int i = 1; i < length; i++) text += $"\n{WriteLine(i, has4SpaceTab)}";
             return text;
         }
 

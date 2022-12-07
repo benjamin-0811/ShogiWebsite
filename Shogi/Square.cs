@@ -133,11 +133,7 @@ namespace ShogiWebsite.Shogi
             return text + $">\n{HtmlPieceImage()}\n</div>";
         }
 
-        private string HtmlPieceClass()
-        {
-            if (piece == null) return "";
-            return $"class=\"{(piece.player.isPlayer1 ? "black" : "white")}-piece\"";
-        }
+        private string HtmlPieceClass() => piece == null ? "" : $"class=\"{(piece.player.isPlayer1 ? "black" : "white")}-piece\"";
 
         private string HtmlPieceImage()
         {

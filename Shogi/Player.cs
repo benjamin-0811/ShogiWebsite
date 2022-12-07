@@ -71,10 +71,7 @@ namespace ShogiWebsite.Shogi
                 return;
             }
             if (board.isOver) return;
-            if (isCheck)
-            {
-                RemoveDangerousKingMoves();
-            }
+            if (isCheck) RemoveDangerousKingMoves();
             else RemoveDangerousMoves();
         }
 
@@ -83,10 +80,7 @@ namespace ShogiWebsite.Shogi
             List<Square> newMoves = new();
             foreach (Square square in moveLists[king.square.CoordinateString()])
             {
-                if (!king.DoesMoveCheckOwnKing(square))
-                {
-                    newMoves.Add(square);
-                }
+                if (!king.DoesMoveCheckOwnKing(square)) newMoves.Add(square);
             }
             moveLists[king.square.CoordinateString()] = newMoves;
         }
