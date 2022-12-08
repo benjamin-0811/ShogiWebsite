@@ -7,7 +7,8 @@ namespace ShogiWebsite.Shogi
         internal readonly Board board;
         internal readonly bool isPlayer1;
         internal List<Piece> boardPieces;
-        internal KeyValuePair<Piece, int>[] hand;
+        // to Dict<Type, int>
+        internal Dictionary<Type, int> hand = new();
         internal King king;
         internal bool isCheck;
         internal bool isCheckmate;
@@ -19,7 +20,7 @@ namespace ShogiWebsite.Shogi
             this.board = board;
             this.isPlayer1 = isPlayer1;
             boardPieces = new();
-            hand = Array.Empty<KeyValuePair<Piece, int>>();
+            // hand = new();
             king = new King(this, board);
             isCheck = false;
             isCheckmate = false;
@@ -70,8 +71,10 @@ namespace ShogiWebsite.Shogi
                 board.EndGame(Opponent());
                 return;
             }
-            if (board.isOver) return;
-            if (isCheck) RemoveDangerousKingMoves();
+            if (board.isOver)
+                return;
+            if (isCheck)
+                RemoveDangerousKingMoves();
             else RemoveDangerousMoves();
         }
 
@@ -80,7 +83,8 @@ namespace ShogiWebsite.Shogi
             List<Square> newMoves = new();
             foreach (Square square in moveLists[king.square.CoordinateString()])
             {
-                if (!king.DoesMoveCheckOwnKing(square)) newMoves.Add(square);
+                if (!king.DoesMoveCheckOwnKing(square))
+                    newMoves.Add(square);
             }
             moveLists[king.square.CoordinateString()] = newMoves;
         }
@@ -95,15 +99,18 @@ namespace ShogiWebsite.Shogi
             foreach (KeyValuePair<string, List<Square>> list in moveLists)
             {
                 Square? square = board.GetSquareByCoordinate(list.Key);
-                if (square == null) continue;
+                if (square == null)
+                    continue;
                 Piece? piece = square.piece;
-                if (piece == null) continue;
+                if (piece == null)
+                    continue;
                 foreach (Square square1 in list.Value)
                 {
                     if (piece is King king && !king.WouldBeCheckAt(square1) || !piece.DoesMoveCheckOwnKing(square1))
                     {
                         string dictKey = list.Key;
-                        if (newMoves.ContainsKey(dictKey)) newMoves[dictKey].Add(square1);
+                        if (newMoves.ContainsKey(dictKey))
+                            newMoves[dictKey].Add(square1);
                         else
                         {
                             var newValue = new KeyValuePair<string, List<Square>>(dictKey, new List<Square> { square1 });
@@ -117,12 +124,15 @@ namespace ShogiWebsite.Shogi
 
         internal Player Opponent()
         {
-            if (this == board.player1) return board.player2;
-            else if (this == board.player2) return board.player1;
-            else throw new Exception("Couldn't find opponent for this player. The opponent may not be initialized.");
+            if (this == board.player1)
+                return board.player2;
+            else if (this == board.player2)
+                return board.player1;
+            else
+                throw new Exception("Couldn't find opponent for this player. The opponent may not be initialized.");
         }
 
-        private KeyValuePair<Piece, int>[] InitHand()
+        private Dictionary<Type, int> InitHand()
         {
             KeyValuePair<Piece, int>[] hand = new KeyValuePair<Piece, int>[7];
             hand[0] = new KeyValuePair<Piece, int>(new Pawn(this, board), 0);
@@ -150,7 +160,8 @@ namespace ShogiWebsite.Shogi
         internal Dictionary<string, IEnumerable<Square>> GetMoveLists()
         {
             var dict = new Dictionary<string, IEnumerable<Square>>();
-            foreach (var piece in boardPieces) dict[piece.square.CoordinateString()] = piece.FindMoves();
+            foreach (var piece in boardPieces)
+                dict[piece.square.CoordinateString()] = piece.FindMoves();
             return dict;
         }
 
@@ -159,7 +170,8 @@ namespace ShogiWebsite.Shogi
             var dict = new Dictionary<string, IEnumerable<Square>>();
             foreach (var piece in hand)
             {
-                if (piece.Value > 0) dict[Names.Abbreviation(piece.Key)] = piece.Key.FindDrops();
+                if (piece.Value > 0)
+                    dict[Names.Abbreviation(piece.Key)] = piece.Key.FindDrops();
             }
             return dict;
         }
@@ -179,7 +191,8 @@ namespace ShogiWebsite.Shogi
         internal void ChangeHandPieceAmount(Piece piece, int change)
         {
             Type pieceType = piece.GetType();
-            if (piece is King) return;
+            if (piece is King)
+                return;
             int index = -1;
             int amount = 0;
             for (int i = 0; i < hand.Length; i++)
@@ -192,7 +205,8 @@ namespace ShogiWebsite.Shogi
                     break;
                 }
             }
-            if (index < 0) return;
+            if (index < 0)
+                return;
             hand[index] = NewHandPiece(piece, amount + change);
         }
 
@@ -239,7 +253,8 @@ namespace ShogiWebsite.Shogi
                 for (int j = 0; j < 9; j++)
                 {
                     Piece? piece = board.squares[i, j].piece;
-                    if (piece != null && this == piece.player) pieces.Add(piece);
+                    if (piece != null && this == piece.player)
+                        pieces.Add(piece);
                 }
             }
             return pieces;
@@ -254,7 +269,8 @@ namespace ShogiWebsite.Shogi
             List<T> pieces = new();
             foreach (Piece piece in boardPieces)
             {
-                if (piece is T t) pieces.Add(t);
+                if (piece is T t)
+                    pieces.Add(t);
             }
             return pieces;
         }
@@ -265,7 +281,8 @@ namespace ShogiWebsite.Shogi
         {
             foreach (Piece piece in boardPieces)
             {
-                if (piece is King king) return king;
+                if (piece is King king)
+                    return king;
             }
             throw new Exception("No king of this player was found, even though it should have already been initialized.");
         }
@@ -278,9 +295,11 @@ namespace ShogiWebsite.Shogi
             string text = "var squareMoveDict = {";
             Dictionary<string, List<Square>> dict = moveLists;
             dict = dict.Concat(dropLists).ToDictionary(x => x.Key, x => x.Value);
-            foreach (KeyValuePair<string, List<Square>> entry in dict) text += $"{entry.Key}: {JavascriptSquareList(entry.Value)}, ";
+            foreach (KeyValuePair<string, List<Square>> entry in dict)
+                text += $"{entry.Key}: {JavascriptSquareList(entry.Value)}, ";
             int last = text.LastIndexOf(',');
-            if (last >= 0) text = text[..last];
+            if (last >= 0)
+                text = text[..last];
             return text + "};";
         }
 
@@ -288,9 +307,11 @@ namespace ShogiWebsite.Shogi
         {
             int length = squares.Count;
             string text = "[";
-            if (length <= 0) return text + "]";
+            if (length <= 0)
+                return text + "]";
             text += $"\"{squares[0].CoordinateString()}\"";
-            for (int i = 1; i < length; i++) text += $", \"{squares[i].CoordinateString()}\"";
+            for (int i = 1; i < length; i++)
+                text += $", \"{squares[i].CoordinateString()}\"";
             return text + "]";
         }
     }

@@ -54,7 +54,8 @@
                 King _ => abbreviationKing,
                 _ => ""
             };
-            if (piece != null && piece.IsPromoted()) abbreviation = "+" + abbreviation;
+            if (piece != null && piece.IsPromoted())
+                abbreviation = "+" + abbreviation;
             return abbreviation;
         }
     }

@@ -20,11 +20,13 @@
             at.piece = this;
             square = at;
             kingSquare.piece = atPiece;
-            if(atPiece != null) atPiece.square = kingSquare;
+            if(atPiece != null)
+                atPiece.square = kingSquare;
             // See if king would be in check
             foreach(var opponentMoves in player.Opponent().GetMoveLists())
             {
-                if (opponentMoves.Value.Contains(at)) result = true;
+                if (opponentMoves.Value.Contains(at))
+                    result = true;
             }
             // Return to old state
             square = kingSquare;
@@ -40,12 +42,15 @@
         {
             bool f1 = FindMoves().Any();
             Piece[] potentialPieces = PiecesThatCheckThisKing();
-            if (potentialPieces.Length <= 0) return false;
-            if (potentialPieces.Length > 1) return true;
+            if (potentialPieces.Length <= 0)
+                return false;
+            if (potentialPieces.Length > 1)
+                return true;
             Piece piece = potentialPieces[0];
             bool f2 = CanCaptureAttacker(piece);
             bool f3 = CanBlockAttacker(piece);
-            if (f1 || f2 || f3) return false;
+            if (f1 || f2 || f3)
+                return false;
             return true;
         }
 
@@ -61,11 +66,14 @@
                 {
                     piecesToCaptureAttacker.Add(capturer);
                     string coord = capturer.CoordinateString();
-                    if (protectMoves.ContainsKey(coord)) protectMoves[coord].Add(square);
-                    else protectMoves.Add(coord, new List<Square>() { square });
+                    if (protectMoves.ContainsKey(coord))
+                        protectMoves[coord].Add(square);
+                    else
+                        protectMoves.Add(coord, new List<Square>() { square });
                 }
             }
-            if (piecesToCaptureAttacker.Any()) return true;
+            if (piecesToCaptureAttacker.Any())
+                return true;
             return false;
         }
 
@@ -91,8 +99,10 @@
                     if (orig != null && orig.piece == this && !DoesMoveCheckOwnKing(square) || squares.Contains(square))
                     {
                         string coord = list.Key;
-                        if (protect.ContainsKey(coord)) protect[coord].Add(square);
-                        else protect.Add(coord, new List<Square>() { square });
+                        if (protect.ContainsKey(coord))
+                            protect[coord].Add(square);
+                        else
+                            protect.Add(coord, new List<Square>() { square });
                         canBlock = true;
                     }
                 }
@@ -103,7 +113,8 @@
         private bool CanBlockAttacker(Piece piece)
         {
             IEnumerable<Square> squaresInbetween = SquaresBetweenKingAndRangedPiece(piece);
-            if (!squaresInbetween.Any()) return false;
+            if (!squaresInbetween.Any())
+                return false;
             bool f1 = CanBlockAttacker(squaresInbetween, true);
             bool f2 = CanBlockAttacker(squaresInbetween, false);
             return f1 || f2;
@@ -124,13 +135,15 @@
             int y2 = piece.square.rowIndex;
             int dx = Math.Abs(x1 - x2);
             int dy = Math.Abs(y1 - y2);
-            if (dx <= 1 && dy <= 1) return new List<Square>();
+            if (dx <= 1 && dy <= 1)
+                return new List<Square>();
             List<Square> squaresInbetween = new();
             if (dx == dy && dx > 1)
             {
                 bool minusX = x1 > x2;
                 bool minusY = y1 > y2;
-                for (int i = 1; i < dx; i++) squaresInbetween.Add(board.squares[minusX ? x1 - i : x1 + i, minusY ? y1 - i : y1 + i]);
+                for (int i = 1; i < dx; i++)
+                    squaresInbetween.Add(board.squares[minusX ? x1 - i : x1 + i, minusY ? y1 - i : y1 + i]);
             }
             return squaresInbetween;
         }
@@ -143,19 +156,22 @@
             int y2 = piece.square.rowIndex;
             int dx = Math.Abs(x1 - x2);
             int dy = Math.Abs(y1 - y2);
-            if (dx <= 1 && dy <= 1) return new List<Square>();
+            if (dx <= 1 && dy <= 1)
+                return new List<Square>();
             List<Square> squaresInbetween = new();
             // vertical
             if (dx == 0 && dy > 1)
             {
                 int yMin = Math.Min(y1, y2);
-                for (int i = 1; i < dy; i++) squaresInbetween.Add(board.squares[x1, yMin + i]);
+                for (int i = 1; i < dy; i++)
+                    squaresInbetween.Add(board.squares[x1, yMin + i]);
             }
             // horizontal
             else if (dx > 1 && dy == 0)
             {
                 int xMin = Math.Min(x1, x2);
-                for (int i = 1; i < dx; i++) squaresInbetween.Add(board.squares[x1, xMin + i]);
+                for (int i = 1; i < dx; i++)
+                    squaresInbetween.Add(board.squares[x1, xMin + i]);
             }
             return squaresInbetween;
         }
@@ -167,7 +183,8 @@
             foreach (Piece piece in potentialPieces)
             {
                 var availableSquares = piece.FindMoves();
-                if (availableSquares.Contains(square)) pieces.Add(piece);
+                if (availableSquares.Contains(square))
+                    pieces.Add(piece);
             }
             return pieces.ToArray();
         }

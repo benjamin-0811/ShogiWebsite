@@ -5,6 +5,8 @@ namespace ShogiWebsite
     internal class Helper
     {
         internal static string RepeatString(string sequence, int amount) => new StringBuilder().Insert(0, sequence, amount).ToString();
+
+        internal static string Indent(int amount, string message = "") => new StringBuilder(RepeatString("\t", amount)).Append(message).ToString();
     }
 
     internal class BetterConsole
@@ -81,7 +83,8 @@ namespace ShogiWebsite
 
         internal CssBuilder Selector(string selector)
         {
-            if (!selectors.Contains(selector)) selectors.Add(selector);
+            if (!selectors.Contains(selector))
+                selectors.Add(selector);
             return this;
         }
 
@@ -97,7 +100,8 @@ namespace ShogiWebsite
                     break;
                 }
             }
-            if (style != null) styles.Remove((KeyValuePair<string, string>)style);
+            if (style != null)
+                styles.Remove((KeyValuePair<string, string>)style);
             styles.Add(new KeyValuePair<string, string>(key, value));
             return this;
         }
@@ -120,16 +124,19 @@ namespace ShogiWebsite
         private string SelectorsToString()
         {
             int length = selectors.Count;
-            if (length <= 0) return "";
-            string text = $"{Helper.RepeatString("  ", indentTabs)}";
-            for (int i = 0; i < length - 1; i++) text += $"{selectors[i]}, ";
-            return text += $"{selectors[length - 1]}";
+            if (length <= 0)
+                return "";
+            StringBuilder builder = new(Helper.Indent(indentTabs));
+            for (int i = 0; i < length - 1; i++)
+                builder.Append($"{selectors[i]}, ");
+            return builder.Append($"{selectors[length - 1]}").ToString(); ;
         }
 
         private string StyleToString(int index)
         {
             int length = styles.Count;
-            if (index >= length) return "";
+            if (index >= length)
+                return "";
             KeyValuePair<string, string> s = styles[index];
             return $"{s.Key}: {s.Value};";
         }
@@ -137,10 +144,12 @@ namespace ShogiWebsite
         private string StylesToString()
         {
             int length = styles.Count;
-            if (length <= 0) return "{ }";
-            string text = "{";
-            for (int i = 0; i < length; i++) text += $"\n{Helper.RepeatString("  ", indentTabs + 2)}{StyleToString(i)}";
-            return text + $"\n{Helper.RepeatString("  ", indentTabs)}}}";
+            if (length <= 0)
+                return "{ }";
+            StringBuilder builder = new("{");
+            for (int i = 0; i < length; i++)
+                builder.Append(Helper.RepeatString("  ", indentTabs + 2) + StyleToString(i));
+            return builder.Append(Helper.RepeatString("  ", indentTabs) + "}").ToString();
         }
 
         internal override CssBuilder Reset() => new(indentTabs);
@@ -174,7 +183,8 @@ namespace ShogiWebsite
 
         internal LinesBuilder RemoveLine(int index)
         {
-            if (index < lines.Count) lines.RemoveAt(index);
+            if (index < lines.Count)
+                lines.RemoveAt(index);
             return this;
         }
 
@@ -185,20 +195,123 @@ namespace ShogiWebsite
         internal string Build(bool has4SpaceTab)
         {
             int length = lines.Count;
-            if (length <= 0) return "";
-            string text = WriteLine(0, has4SpaceTab);
-            for (int i = 1; i < length; i++) text += $"\n{WriteLine(i, has4SpaceTab)}";
-            return text;
+            if (length <= 0)
+                return "";
+            StringBuilder builder = new(WriteLine(0, has4SpaceTab));
+            for (int i = 1; i < length; i++)
+                builder.AppendLine(WriteLine(i, has4SpaceTab));
+            return builder.ToString();
         }
 
         private string WriteLine(int index, bool has4SpaceTab = true)
         {
-            if (index >= lines.Count) return "";
+            if (index >= lines.Count)
+                return "";
             KeyValuePair<string, int> line = lines[index];
-            return $"{Helper.RepeatString("  ", indentTabs + line.Value * (has4SpaceTab ? 2 : 1))}{line.Key}";
+            return Helper.Indent(indentTabs + line.Value, line.Key);
         }
 
         internal override LinesBuilder Reset() => new(indentTabs);
+    }
+
+    internal class HtmlBuilder : AbstractBuilder<string>
+    {
+        private readonly string tag;
+        private readonly TagType tagType;
+        private readonly Dictionary<string, string> properties;
+        private readonly List<object> children;
+        private int depth;
+        private static readonly Dictionary<string, TagType> tagTypeLookUpTable = CreateTagTypeLookUpTable();
+        internal HtmlBuilder(string tag = "div")
+        {
+            this.tag = tag;
+            tagType = FindTagType();
+            properties = new();
+            children = new();
+            depth = 0;
+        }
+
+        private enum TagType
+        {
+            Single,
+            Inline,
+            Block,
+            BlockNoIndent
+        }
+
+        private static Dictionary<string, TagType> CreateTagTypeLookUpTable()
+        {
+            Dictionary<string, TagType> dict = new();
+            dict["!DOCTYPE"] = TagType.Single;
+            dict["a"] = TagType.Inline;
+            dict["abbr"] = TagType.Inline;
+            dict[""] =
+
+            return dict;
+        }
+
+        private TagType FindTagType()
+        {
+            bool isBlockTag = blockTags.Contains(tag);
+            bool isSelfClosing = selfClodingTags.Contains(tag);
+            if (isBlockTag)
+                return TagType.UsualBlock;
+            if (isSelfClosing)
+                return TagType.SelfClosing;
+
+        }
+
+        internal HtmlBuilder Property(string key, string value)
+        {
+            properties[key] = value;
+            return this;
+        }
+
+        internal HtmlBuilder Child(object child)
+        {
+            if (!blockTags.Contains(tag))
+                return this;
+            if (child is HtmlBuilder builder)
+                builder.depth = depth + 1;
+            children.Add(child);
+            return this;
+        }
+
+        // Use StringBuilder from Parent
+        internal override string Build() => FillBuilder(new StringBuilder()).ToString();
+
+        private StringBuilder FillBuilder(StringBuilder builder)
+        {
+            builder = builder.AppendLine($"<{tag} {PropertiesToString()}>");
+            if (!blockTags.Contains(tag))
+                return builder;
+            foreach (var child in children)
+                builder = builder.AppendLine(ChildToString(child));
+            return builder.AppendLine(Helper.Indent(depth, $"</{tag}>"));
+        }
+
+        private string PropertiesToString()
+        {
+            StringBuilder builder = new();
+            foreach (var property in properties)
+                builder.Append($"{property.Key}=\"{property.Value}\" ");
+            return builder.ToString().Trim();
+        }
+
+        private string ChildToString(object child)
+        {
+            StringBuilder builder = new(Helper.RepeatString("\t", depth + 1));
+            if (child is decimal decimalChild)
+                child = decimalChild.ToString();
+            if (child is string || child.GetType().IsPrimitive)
+                return builder.Append(child).ToString();
+            else if (child is HtmlBuilder childBuilder)
+                return builder.Append(childBuilder.Build()).ToString();
+            else
+                return "";
+        }
+
+        internal override HtmlBuilder Reset() => new(tag);
     }
 
     internal class Color

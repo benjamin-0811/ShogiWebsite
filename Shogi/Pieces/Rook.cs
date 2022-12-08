@@ -11,7 +11,8 @@
         internal override IEnumerable<Square> FindMoves()
         {
             var moves = RangeMoves(new[] { square.North, square.East, square.South, square.West });
-            if (isPromoted) moves = moves.Concat(ListMoves(new[] { square.NorthEast, square.NorthWest, square.SouthEast, square.SouthWest }));
+            if (isPromoted)
+                moves = moves.Concat(ListMoves(new[] { square.NorthEast, square.NorthWest, square.SouthEast, square.SouthWest }));
             return moves;
         }
     }

@@ -33,7 +33,8 @@ namespace ShogiWebsite.Shogi.Pieces
                 var bytes = stream.ToArray();
                 return Convert.ToBase64String(bytes);
             }
-            else return "";
+            else
+                return "";
         }
 
         internal static string Get(Piece? piece) => piece switch

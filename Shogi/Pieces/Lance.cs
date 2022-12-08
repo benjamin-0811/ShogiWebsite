@@ -21,7 +21,8 @@
                 for (int j = 0; j < 9; j++)
                 {
                     Square square = board.squares[j, i];
-                    if (square.piece == null) yield return square;
+                    if (square.piece == null)
+                        yield return square;
                 }
             }
         }
@@ -29,7 +30,8 @@
         internal override void ForcePromote()
         {
             int row = square.rowIndex;
-            if (!isPromoted && (player.isPlayer1 ? row == 0 : row == 8)) Promote();
+            if (!isPromoted && (player.isPlayer1 ? row == 0 : row == 8))
+                Promote();
         }
     }
 }

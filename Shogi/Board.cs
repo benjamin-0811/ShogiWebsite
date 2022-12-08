@@ -44,7 +44,8 @@ namespace ShogiWebsite.Shogi
 
         internal Square? GetSquareByCoordinate(string coordinate)
         {
-            if (coordinate.Length != 2) return null;
+            if (coordinate.Length != 2)
+                return null;
             int row = Array.IndexOf(Square.rows, coordinate[0]);
             int column = Array.IndexOf(Square.columns, coordinate[1]);
             return nullSquare.SquareAt(column, row);
@@ -55,7 +56,8 @@ namespace ShogiWebsite.Shogi
             Square[,] squares = new Square[9, 9];
             for (int i = 0; i < 9; i++)
             {
-                for (int j = 0; j < 9; j++) squares[i, j] = new Square(i, j, null, this);
+                for (int j = 0; j < 9; j++)
+                    squares[i, j] = new Square(i, j, null, this);
             }
             return squares;
         }
@@ -120,7 +122,8 @@ namespace ShogiWebsite.Shogi
             for (int i = 0; i < 9; i++)
             {
                 string subText = "";
-                for (int j = 0; j < 9; j++) subText += squares[j, i].ToHtml();
+                for (int j = 0; j < 9; j++)
+                    subText += squares[j, i].ToHtml();
                 text += $"<div class=\"row\">{subText}</div>";
             }
             return text + "</div>";
@@ -136,11 +139,14 @@ namespace ShogiWebsite.Shogi
 
         internal string LogToHtml()
         {
+            // Stringbuilder nutzen
             string text = "<div id=\"log\" class=\"log\">";
             int length = log.Count;
-            if (length <= 0) return text + "</div>";
+            if (length <= 0)
+                return text + "</div>";
             text += $"\n{log[0]}";
-            for (int i = 1; i < length; i++) text += $"\n<br>{log[i]}";
+            for (int i = 1; i < length; i++)
+                text += $"\n<br>{log[i]}";
             return text + "\n</div>";
         }
 
@@ -154,7 +160,8 @@ namespace ShogiWebsite.Shogi
         {
             Player player = isPlayer1Turn ? player1 : player2;
             player.AfterOpponent();
-            if (isOver) return;
+            if (isOver)
+                return;
             player.PrepareTurn();
         }
 
@@ -166,7 +173,8 @@ namespace ShogiWebsite.Shogi
 
         internal string GameEndHtml()
         {
-            if (!isOver) return "";
+            if (!isOver)
+                return "";
             var builder = new LinesBuilder();
             builder
                 .Line("<div id=\"game-end-overlay\">")

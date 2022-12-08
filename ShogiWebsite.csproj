@@ -11,4 +11,6 @@
     <PackageReference Include="System.Drawing.Common" Version="6.0.0" />
   </ItemGroup>
 
+  <ProjectExtensions><VisualStudio><UserProperties assets_4js_4functions_1js__JsonSchema="javas" /></VisualStudio></ProjectExtensions>
+
 </Project>

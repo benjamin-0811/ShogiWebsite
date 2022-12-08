@@ -1,4 +1,5 @@
-﻿using System.Net.Sockets;
+﻿using System.Net;
+using System.Net.Sockets;
 using System.Text;
 using ShogiWebsite.Shogi;
 
@@ -18,10 +19,21 @@ namespace ShogiWebsite
 
         public static void Main()
         {
-            TcpListener listener = new(80);
-            listener.Start();
+            // HTTP Server
+            HttpListener httpListener = new();
+            httpListener.Prefixes.Add("http:localhost:8001/");
+            // TcpListener listener = new(80);
+            // listener.Start();
+            httpListener.Start();
+            Console.WriteLine("Listening on Port 8001...");
             while (true)
             {
+                HttpListenerContext context = httpListener.GetContext();
+                HttpListenerResponse response = context.Response;
+
+                response.StatusCode = (int)HttpStatusCode.OK;
+                response.StatusDescription = "Status OK";
+
                 BetterConsole.Special("Listening");
                 TcpClient client = listener.AcceptTcpClient();
                 BetterConsole.Special("Connected");
@@ -51,11 +63,14 @@ namespace ShogiWebsite
             BetterConsole.Action("Find project directory.");
             string d1 = Directory.GetCurrentDirectory();
             DirectoryInfo? d2 = Directory.GetParent(d1);
-            if (d2 == null) return null;
+            if (d2 == null)
+                return null;
             DirectoryInfo? d3 = d2.Parent;
-            if (d3 == null) return null;
+            if (d3 == null)
+                return null;
             DirectoryInfo? d4 = d3.Parent;
-            if (d4 == null) return null;
+            if (d4 == null)
+                return null;
             string dir = d4.ToString();
             BetterConsole.Info($"Found the project directory : \"{dir}\"");
             return dir;
@@ -80,121 +95,8 @@ namespace ShogiWebsite
 
         private static string Functions()
         {
-            List<LinesBuilder> builders = new();
-            builders.Add(
-                new LinesBuilder(3)
-                .Line("function finalizeMove(from, to) {")
-                .Line("submitForm(`${from}-${to}`);", 1)
-                .Line("}"));
-            builders.Add(
-                new LinesBuilder(3)
-                .Line("function finalizePromotionMove(from, to) {")
-                .Line("submitForm(`${from}-${to}p`);", 1)
-                .Line("}"));
-            builders.Add(
-                new LinesBuilder(3)
-                .Line("function askPromotionFirst(from, to) {")
-                .Line("var yesButton = document.getElementById('do-promote');", 1)
-                .Line("yesButton.setAttribute('onclick', `finalizePromotionMove('${from}', '${to}')`)", 1)
-                .Line("var noButton = document.getElementById('dont-promote');", 1)
-                .Line("noButton.setAttribute('onclick', `finalizeMove('${from}', '${to}')`)", 1)
-                .Line("document.getElementById('ask-promotion-overlay').style.display = 'block';", 1)
-                .Line("}"));
-            builders.Add(
-                new LinesBuilder(3)
-                .Line("function restart() {")
-                .Line("submitForm('restart');", 1)
-                .Line("}"));
-            builders.Add(
-                new LinesBuilder(3)
-                .Line("function surrender() {")
-                .Line("submitForm('surrender');", 1)
-                .Line("}"));
-            builders.Add(
-                new LinesBuilder(3)
-                .Line("function submitForm(value) {")
-                .Line("var form1 = document.getElementById('moveForm');", 1)
-                .Line("var input1 = document.getElementById('move');", 1)
-                .Line("input1.setAttribute('value', value);", 1)
-                .Line("form1.submit();", 1)
-                .Line("}"));
-            builders.Add(
-                new LinesBuilder(3)
-                .Line("function selectMoves(forId) {")
-                .Line("resetMoves();", 1)
-                .Line("var old = sessionStorage.getItem(\"last\");", 1)
-                .Line("if (old == forId) {", 1)
-                .Line("sessionStorage.clear();", 2)
-                .Line("return;", 2)
-                .Line("}", 1)
-                .Line("var squares = squareMoveDict[forId];", 1)
-                .Line("if (squares !== undefined) {", 1)
-                .Line("for (let i = 0; i < squares.length; i++) {", 2)
-                .Line("var curId = squares[i];", 3)
-                .Line("var elem = document.getElementById(curId);", 3)
-                .Line("elem.style.setProperty(\"background-color\", \"#7fffbf\");", 3)
-                .Line("if (shouldAskForPromotion(forId, curId)) {", 3)
-                .Line("elem.setAttribute(\"onclick\", `askPromotionFirst('${forId}','${curId}')`)", 4)
-                .Line("}", 3)
-                .Line("else {", 3)
-                .Line("elem.setAttribute(\"onclick\", `finalizeMove('${forId}','${curId}')`)", 4)
-                .Line("}", 3)
-                .Line("}", 2)
-                .Line("sessionStorage.setItem(\"last\", forId);", 2)
-                .Line("}", 1)
-                .Line("}"));
-            builders.Add(
-                new LinesBuilder(3)
-                .Line("function shouldAskForPromotion(from, to) {")
-                .Line("var elem = document.getElementById(from);", 1)
-                .Line("var isPromotable = elem.classList.contains('promotable');", 1)
-                .Line("var forcePromo = false;", 1)
-                .Line("var forcePromoteList;", 1)
-                .Line("if (elem.classList.contains('forcePromo1')) {", 1)
-                .Line("forcePromoteList = pawnLancePromo", 2)
-                .Line("}", 1)
-                .Line("if (elem.classList.contains('forcePromo2')) {", 1)
-                .Line("forcePromoteList = knightPromo", 2)
-                .Line("}", 1)
-                .Line("if (forcePromoteList !== undefined) {", 1)
-                .Line("for (let i = 0; i < forcePromoteList.length; i++) {", 2)
-                .Line("if (to.includes(forcePromoteList[i])) {", 3)
-                .Line("forcePromo = true;", 4)
-                .Line("}", 3)
-                .Line("}", 2)
-                .Line("}", 1)
-                .Line("return isPromotable && !forcePromo && isInPromotionZone(to)")
-                .Line("}"));
-            builders.Add(
-                new LinesBuilder(3)
-                .Line("function isInPromotionZone(curId) {")
-                .Line("for (let i = 0; i < promotionZone.length; i++) {", 1)
-                .Line("if (curId.includes(promotionZone[i])) {", 2)
-                .Line("return true;", 3)
-                .Line("}", 2)
-                .Line("}", 1)
-                .Line("return false;", 1)
-                .Line("}"));
-            builders.Add(
-                new LinesBuilder(3)
-                .Line("function resetMoves() {")
-                .Line("var elems = document.getElementsByClassName(\"square\");", 1)
-                .Line("for (let i = 0; i < elems.length; i++) {", 1)
-                .Line("var elem = elems[i];", 2)
-                .Line("elem.removeAttribute(\"onclick\");", 2)
-                .Line("elem.removeAttribute(\"style\");", 2)
-                .Line("}", 1)
-                .Line("var keys = Object.keys(squareMoveDict);", 1)
-                .Line("for (let i = 0; i < keys.length; i++) {", 1)
-                .Line("var key = keys[i];", 2)
-                .Line("document.getElementById(key).setAttribute(\"onclick\", `selectMoves('${key}')`);", 2)
-                .Line("}", 1)
-                .Line("}"));
-            int length = builders.Count;
-            if (length <= 0) return "";
-            string text = builders[0].Build();
-            for (int i = 1; i < length; i++) text += $"\n\n{builders[i].Build()}";
-            return text;
+            string location = projectDir + @"\assets\js\functions.js";
+            return File.ReadAllText(location);
         }
 
         private static string DefaultStyles()
@@ -379,9 +281,11 @@ namespace ShogiWebsite
                 .Style("z-index", "2"));
             // Using builders
             int length = builders.Count;
-            if (length <= 0) return "";
+            if (length <= 0)
+                return "";
             string text = builders[0].Build();
-            for (int i = 1; i < length; i++) text += $"\n{builders[i].Build()}";
+            for (int i = 1; i < length; i++)
+                text += $"\n{builders[i].Build()}";
             return text;
         }
 
@@ -389,6 +293,7 @@ namespace ShogiWebsite
 
         private static byte[] AnswerHTML()
         {
+            // HTML Builder
             LinesBuilder builder = new(0);
             builder
                 .Line("HTTP/1.1 200 OK")
@@ -466,10 +371,12 @@ namespace ShogiWebsite
             bool switchPlayer = false;
             Player player = board.isPlayer1Turn ? board.player1 : board.player2;
             bool promotion = actionCode.Length == 6;
-            if (actionCode == "surrender") board.EndGame(player.Opponent());
+            if (actionCode == "surrender")
+                board.EndGame(player.Opponent());
             else if (actionCode == "restart")
             {
-                if (!board.isOver) board.EndGame(player.Opponent());
+                if (!board.isOver)
+                    board.EndGame(player.Opponent());
                 board = new Board();
             }
             else if (actionCode.Length == 5 || promotion)
@@ -481,10 +388,13 @@ namespace ShogiWebsite
                 Piece? piece = board.squares[c1, r1].piece;
                 if (piece != null)
                 {
-                    if (board.IsPlayersTurn(piece.player)) switchPlayer = piece.Move(board.squares[c2, r2], promotion);
-                    else BetterConsole.Error("Wrong player on the move!");
+                    if (board.IsPlayersTurn(piece.player))
+                        switchPlayer = piece.Move(board.squares[c2, r2], promotion);
+                    else
+                        BetterConsole.Error("Wrong player on the move!");
                 }
-                else BetterConsole.Error("There was no piece to move!");
+                else
+                    BetterConsole.Error("There was no piece to move!");
             }
             else if (actionCode.Length == 4)
             {
@@ -492,10 +402,13 @@ namespace ShogiWebsite
                 int r1 = Array.IndexOf(Square.rows, actionCode[2]);
                 int c1 = Array.IndexOf(Square.columns, actionCode[3]);
                 Piece? piece = player.PieceFromHandByAbbr(abbr);
-                if (piece != null) switchPlayer = piece.MoveFromHand(board.squares[c1, r1]);
-                else BetterConsole.Error("There was no piece to move!");
+                if (piece != null)
+                    switchPlayer = piece.MoveFromHand(board.squares[c1, r1]);
+                else
+                    BetterConsole.Error("There was no piece to move!");
             }
-            if (switchPlayer) board.isPlayer1Turn = !board.isPlayer1Turn;
+            if (switchPlayer)
+                board.isPlayer1Turn = !board.isPlayer1Turn;
         }
     }
 }

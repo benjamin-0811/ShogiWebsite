@@ -2,6 +2,7 @@
 
 namespace ShogiWebsite.Shogi
 {
+    // Square may be useless
     internal class Square
     {
         internal readonly char column;
@@ -35,7 +36,8 @@ namespace ShogiWebsite.Shogi
 
         internal string CoordinateString()
         {
-            if (this == board.nullSquare) return "hand";
+            if (this == board.nullSquare)
+                return "hand";
             return $"{rows[rowIndex]}{columns[colIndex]}";
         }
 
@@ -45,61 +47,73 @@ namespace ShogiWebsite.Shogi
 
         internal Square? North(int distance = 1, bool printLog = true)
         {
-            if (printLog) BetterConsole.Info($"Looking {distance} squares north of {CoordinateString()}");
+            if (printLog)
+                BetterConsole.Info($"Looking {distance} squares north of {CoordinateString()}");
             int newRowIndex = rowIndex - distance;
             return SquareAt(colIndex, newRowIndex);
         }
 
         internal Square? South(int distance = 1, bool printLog = true)
         {
-            if (printLog) BetterConsole.Info($"Looking {distance} squares south of {CoordinateString()}");
+            if (printLog)
+                BetterConsole.Info($"Looking {distance} squares south of {CoordinateString()}");
             int newRowIndex = rowIndex + distance;
             return SquareAt(colIndex, newRowIndex);
         }
 
         internal Square? East(int distance = 1, bool printLog = true)
         {
-            if (printLog) BetterConsole.Info($"Looking {distance} squares east of {CoordinateString()}");
+            if (printLog)
+                BetterConsole.Info($"Looking {distance} squares east of {CoordinateString()}");
             int newColIndex = colIndex + distance;
             return SquareAt(newColIndex, rowIndex);
         }
 
         internal Square? West(int distance = 1, bool printLog = true)
         {
-            if (printLog) BetterConsole.Info($"Looking {distance} squares west of {CoordinateString()}");
+            if (printLog)
+                BetterConsole.Info($"Looking {distance} squares west of {CoordinateString()}");
             int newColIndex = colIndex - distance; ;
             return SquareAt(newColIndex, rowIndex);
         }
 
         internal Square? NorthEast(int distance = 1, bool printLog = true)
         {
-            if (printLog) BetterConsole.Info($"Looking {distance} squares north east of {CoordinateString()}");
+            if (printLog)
+                BetterConsole.Info($"Looking {distance} squares north east of {CoordinateString()}");
             Square? north = North(distance, false);
-            if (north == null) return null;
+            if (north == null)
+                return null;
             return north.East(distance, false);
         }
 
         internal Square? NorthWest(int distance = 1, bool printLog = true)
         {
-            if (printLog) BetterConsole.Info($"Looking {distance} squares north west of {CoordinateString()}");
+            if (printLog)
+                BetterConsole.Info($"Looking {distance} squares north west of {CoordinateString()}");
             Square? north = North(distance, false);
-            if (north == null) return null;
+            if (north == null)
+                return null;
             return north.West(distance, false);
         }
 
         internal Square? SouthEast(int distance = 1, bool printLog = true)
         {
-            if (printLog) BetterConsole.Info($"Looking {distance} squares south east of {CoordinateString()}");
+            if (printLog)
+                BetterConsole.Info($"Looking {distance} squares south east of {CoordinateString()}");
             Square? south = South(distance, false);
-            if (south == null) return null;
+            if (south == null)
+                return null;
             return south.East(distance, false);
         }
 
         internal Square? SouthWest(int distance = 1, bool printLog = true)
         {
-            if (printLog) BetterConsole.Info($"Looking {distance} squares north west of {CoordinateString()}.");
+            if (printLog)
+                BetterConsole.Info($"Looking {distance} squares north west of {CoordinateString()}.");
             Square? south = South(distance, false);
-            if (south == null) return null;
+            if (south == null)
+                return null;
             return south.West(distance, false);
         }
 
@@ -109,8 +123,10 @@ namespace ShogiWebsite.Shogi
             string hori = left ? (isPlayer1 ? "west" : "east") : (isPlayer1 ? "east" : "west");
             BetterConsole.Info($"Looking one knight's move {vert} {hori} of {CoordinateString()}.");
             Square? front = isPlayer1 ? North(2, false) : South(2, false);
-            if (front == null) return null;
-            if (left) return isPlayer1 ? front.West(1, false) : front.East(1, false);
+            if (front == null)
+                return null;
+            if (left)
+                return isPlayer1 ? front.West(1, false) : front.East(1, false);
             return isPlayer1 ? front.East(1, false) : front.West(1, false);
         }
 
@@ -125,11 +141,14 @@ namespace ShogiWebsite.Shogi
             string forcePromote = "";
             if (isPlayersTurn && notOver && isPromotable)
             {
-                if (piece is Pawn or Lance) forcePromote = " forcePromo1";
-                else if (piece is Knight) forcePromote = " forcePromo2";
+                if (piece is Pawn or Lance)
+                    forcePromote = " forcePromo1";
+                else if (piece is Knight)
+                    forcePromote = " forcePromo2";
             }
             string text = $"<div id=\"{row}{column}\" class=\"square{promotable}{forcePromote}\"";
-            if (isPlayersTurn && notOver) text += $" onclick=\"selectMoves(\'{row}{column}\');\"";
+            if (isPlayersTurn && notOver)
+                text += $" onclick=\"selectMoves(\'{row}{column}\');\"";
             return text + $">\n{HtmlPieceImage()}\n</div>";
         }
 

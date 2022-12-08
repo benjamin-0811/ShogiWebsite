@@ -13,9 +13,11 @@
         private IEnumerable<Square> KnightMoves()
         {
             var left = KnightMoveLeft();
-            if (left != null && IsAvailableSquare(left)) yield return left;
+            if (left != null && IsAvailableSquare(left))
+                yield return left;
             var right = KnightMoveRight();
-            if (right != null && IsAvailableSquare(right)) yield return right;
+            if (right != null && IsAvailableSquare(right))
+                yield return right;
         }
 
         internal override IEnumerable<Square> FindDrops()
@@ -27,7 +29,8 @@
                 for (int j = 0; j < 9; j++)
                 {
                     var square = board.squares[j, i];
-                    if (square.piece == null) yield return square;
+                    if (square.piece == null)
+                        yield return square;
                 }
             }
         }

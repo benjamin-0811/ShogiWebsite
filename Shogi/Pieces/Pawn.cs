@@ -13,7 +13,8 @@
         private IEnumerable<Square> PawnMove()
         {
             Square? front = Forward();
-            if (front != null && DifferentPlayer(front)) yield return front;
+            if (front != null && DifferentPlayer(front))
+                yield return front;
         }
 
         internal override IEnumerable<Square> FindDrops()
@@ -25,7 +26,8 @@
                 for (int j = min; j <= max; j++)
                 {
                     Square square = board.squares[i, j];
-                    if (square.piece == null && !WouldCheckmate(square)) yield return square;
+                    if (square.piece == null && !WouldCheckmate(square))
+                        yield return square;
                 }
             }
         }
@@ -49,7 +51,8 @@
             }
             for (int i = 0; i < colHasPawn.Length; i++)
             {
-                if (!colHasPawn[i]) yield return i;
+                if (!colHasPawn[i])
+                    yield return i;
             }
         }
 
@@ -73,7 +76,8 @@
         internal override void ForcePromote()
         {
             int row = square.rowIndex;
-            if (!isPromoted && (player.isPlayer1 ? row == 0 : row == 8)) Promote();
+            if (!isPromoted && (player.isPlayer1 ? row == 0 : row == 8))
+                Promote();
         }
     }
 }

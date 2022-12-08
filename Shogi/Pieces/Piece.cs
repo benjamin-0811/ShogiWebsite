@@ -66,10 +66,12 @@ namespace ShogiWebsite.Shogi
                 string part1 = $"{Names.Abbreviation(this)}{old.CoordinateString()}";
                 bool wasPromoted = isPromoted;
                 ForcePromote();
-                if (wasPromoted != isPromoted) doesPromote = true;
+                if (wasPromoted != isPromoted)
+                    doesPromote = true;
                 string part2 = $"{moveType}{to.CoordinateString()}{(doesPromote ? "+" : "")}";
                 board.log.Add($"{player.PlayerNumber()} : {part1}{part2}");
-                if (doesPromote) isPromoted = true;
+                if (doesPromote)
+                    isPromoted = true;
                 return true;
             }
             BetterConsole.Error("Illegal move!");
@@ -115,10 +117,12 @@ namespace ShogiWebsite.Shogi
             square = to;
             oldSquare.piece = null;
             // save result
-            if (player.king.IsCheck()) result = true;
+            if (player.king.IsCheck())
+                result = true;
             // restore old state
             to.piece = oldToPiece;
-            if (oldToPiece != null) oldToPiece.square = to;
+            if (oldToPiece != null)
+                oldToPiece.square = to;
             oldSquare.piece = this;
             square = oldSquare;
             return result;
@@ -133,7 +137,8 @@ namespace ShogiWebsite.Shogi
                 isPromoted = true;
                 BetterConsole.Action($"{pieceS} was promoted.");
             }
-            else BetterConsole.Error($"{pieceS} cannot be promoted!");
+            else
+                BetterConsole.Error($"{pieceS} cannot be promoted!");
         }
 
         internal string IdentifyingString() => $"{player.PlayerNumber()}'s {Names.Get(this)} on {square.CoordinateString()}";
@@ -163,7 +168,8 @@ namespace ShogiWebsite.Shogi
                 for (int j = 0; j < 9; j++)
                 {
                     Square square = board.squares[i, j];
-                    if (square.piece == null) yield return square;
+                    if (square.piece == null)
+                        yield return square;
                 }
             }
         }
@@ -180,9 +186,11 @@ namespace ShogiWebsite.Shogi
                 while (flag)
                 {
                     Square? temp = directions[i](distance, true);
-                    if (temp == null) break;
+                    if (temp == null)
+                        break;
                     flag = CanContinue(temp);
-                    if (IsAvailableSquare(temp)) yield return temp;
+                    if (IsAvailableSquare(temp))
+                        yield return temp;
                     distance++;
                 }
             }
@@ -192,11 +200,13 @@ namespace ShogiWebsite.Shogi
         protected IEnumerable<Square> ListMoves(Func<int, bool, Square?>[] directions)
         {
             List<Square?> sList = new();
-            foreach (var direction in directions) sList.Add(GetSquareIfAvailable(direction));
+            foreach (var direction in directions)
+                sList.Add(GetSquareIfAvailable(direction));
             for (int i = 0; i < sList.Count; i++)
             {
                 Square? s1 = sList[i];
-                if (s1 != null) yield return s1;
+                if (s1 != null)
+                    yield return s1;
             }
         }
 
@@ -206,7 +216,8 @@ namespace ShogiWebsite.Shogi
         /// <param name="square">Current square in a loop</param>
         protected static bool CanContinue(Square? square)
         {
-            if (square == null) return false;
+            if (square == null)
+                return false;
             Piece? piece = square.piece;
             return piece == null;
         }
@@ -245,49 +256,57 @@ namespace ShogiWebsite.Shogi
 
         internal Square? Forward(int distance = 1, bool printLog = true)
         {
-            if (printLog) BetterConsole.Info($"Looking {distance} squares in front of {IdentifyingString()}");
+            if (printLog)
+                BetterConsole.Info($"Looking {distance} squares in front of {IdentifyingString()}");
             return player.isPlayer1 ? square.North(distance, false) : square.South(distance, false);
         }
 
         internal Square? Back(int distance = 1, bool printLog = true)
         {
-            if (printLog) BetterConsole.Info($"Looking {distance} squares behind {IdentifyingString()}");
+            if (printLog)
+                BetterConsole.Info($"Looking {distance} squares behind {IdentifyingString()}");
             return player.isPlayer1 ? square.South(distance, false) : square.North(distance, false);
         }
 
         internal Square? Left(int distance = 1, bool printLog = true)
         {
-            if (printLog) BetterConsole.Info($"Looking {distance} squares left to {IdentifyingString()}");
+            if (printLog)
+                BetterConsole.Info($"Looking {distance} squares left to {IdentifyingString()}");
             return player.isPlayer1 ? square.West(distance, false) : square.East(distance, false);
         }
 
         internal Square? Right(int distance = 1, bool printLog = true)
         {
-            if (printLog) BetterConsole.Info($"Looking {distance} squares right to {IdentifyingString()}");
+            if (printLog)
+                BetterConsole.Info($"Looking {distance} squares right to {IdentifyingString()}");
             return player.isPlayer1 ? square.East(distance, false) : square.West(distance, false);
         }
 
         internal Square? FrontLeft(int distance = 1, bool printLog = true)
         {
-            if (printLog) BetterConsole.Info($"Looking {distance} squares to the front left of {IdentifyingString()}");
+            if (printLog)
+                BetterConsole.Info($"Looking {distance} squares to the front left of {IdentifyingString()}");
             return player.isPlayer1 ? square.NorthWest(distance, false) : square.SouthEast(distance, false);
         }
 
         internal Square? FrontRight(int distance = 1, bool printLog = true)
         {
-            if (printLog) BetterConsole.Info($"Looking {distance} squares to the front right of {IdentifyingString()}");
+            if (printLog)
+                BetterConsole.Info($"Looking {distance} squares to the front right of {IdentifyingString()}");
             return player.isPlayer1 ? square.NorthEast(distance, false) : square.SouthWest(distance, false);
         }
 
         internal Square? BackLeft(int distance = 1, bool printLog = true)
         {
-            if (printLog) BetterConsole.Info($"Looking {distance} squares to the back left of {IdentifyingString()}");
+            if (printLog)
+                BetterConsole.Info($"Looking {distance} squares to the back left of {IdentifyingString()}");
             return player.isPlayer1 ? square.SouthWest(distance, false) : square.NorthEast(distance, false);
         }
 
         internal Square? BackRight(int distance = 1, bool printLog = true)
         {
-            if (printLog) BetterConsole.Info($"Looking {distance} squares to the back right of {IdentifyingString()}");
+            if (printLog)
+                BetterConsole.Info($"Looking {distance} squares to the back right of {IdentifyingString()}");
             return player.isPlayer1 ? square.SouthEast(distance, false) : square.NorthWest(distance, false);
         }
 
