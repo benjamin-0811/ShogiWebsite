@@ -6,7 +6,17 @@ namespace ShogiWebsite
     {
         internal static string RepeatString(string sequence, int amount) => new StringBuilder().Insert(0, sequence, amount).ToString();
 
+        internal static void AddRepeatChar(StringBuilder builder, char character, int amount)
+        {
+            for (int i = 0; i < amount; i++)
+                builder.Append(character);
+        }
+
         internal static string Indent(int amount, string message = "") => new StringBuilder(RepeatString("\t", amount)).Append(message).ToString();
+
+        internal static void AddIndent(StringBuilder builder, int amount) => AddRepeatChar(builder, '\t', amount);
+
+        internal static bool LastIsNewLine(StringBuilder builder) => builder.Length > 0 && builder[^1] == '\n';
     }
 
     internal class BetterConsole
@@ -218,50 +228,179 @@ namespace ShogiWebsite
     {
         private readonly string tag;
         private readonly TagType tagType;
-        private readonly Dictionary<string, string> properties;
+        private readonly Dictionary<string, string?> properties;
         private readonly List<object> children;
         private int depth;
+
         private static readonly Dictionary<string, TagType> tagTypeLookUpTable = CreateTagTypeLookUpTable();
-        internal HtmlBuilder(string tag = "div")
+
+        internal HtmlBuilder(string tag, TagType tagType)
         {
             this.tag = tag;
-            tagType = FindTagType();
+            this.tagType = tagType;
             properties = new();
             children = new();
             depth = 0;
         }
 
-        private enum TagType
+        internal HtmlBuilder(string tag = "div") : this(tag, FindTagType(tag))
+        { }
+
+        [Flags]
+        internal enum TagType
         {
-            Single,
-            Inline,
-            Block,
-            BlockNoIndent
+            /// <summary>no closing tag</summary>
+            SingleInline = 0b_0000_0001,
+            /// <summary>no closing tag, requires own line</summary>
+            SingleOwnLine = 0b_0000_0010,
+            /// <summary>in the same line as plain text</summary>
+            BlockInline = 0b_0000_0100,
+            /// <summary>opening and closing tag with content in the same line</summary>
+            BlockOneLine = 0b_0000_1000,
+            /// <summary>opening and closing tag with content in their own line, one tab indent</summary>
+            Block = 0b_0001_0000,
+            /// <summary>see block, no indentation</summary>
+            BlockNoIndent = 0b_0010_0000,
+            /// <summary>preformatted text, content starts with no indentation whatsoever</summary>
+            Preformatted = 0b_0100_0000,
+            Unpaired = SingleInline | SingleOwnLine,
+            Paired = BlockInline | BlockOneLine | Block | BlockNoIndent | Preformatted,
+            NewLine = SingleOwnLine | BlockOneLine | Block | BlockNoIndent | Preformatted,
+            ChildNewLine = Block | BlockNoIndent | Preformatted
         }
 
         private static Dictionary<string, TagType> CreateTagTypeLookUpTable()
         {
             Dictionary<string, TagType> dict = new();
-            dict["!DOCTYPE"] = TagType.Single;
-            dict["a"] = TagType.Inline;
-            dict["abbr"] = TagType.Inline;
-            dict[""] =
-
+            // Add more if there are any missing html tags.
+            dict["!DOCTYPE"] = TagType.SingleOwnLine;
+            dict["a"] = TagType.BlockInline;
+            dict["abbr"] = TagType.BlockInline;
+            dict["address"] = TagType.Block;
+            dict["area"] = TagType.SingleInline;
+            dict["article"] = TagType.Block;
+            dict["aside"] = TagType.Block;
+            dict["audio"] = TagType.Block;
+            dict["b"] = TagType.BlockInline;
+            dict["base"] = TagType.SingleOwnLine;
+            dict["bdi"] = TagType.BlockInline;
+            dict["bdo"] = TagType.BlockInline;
+            dict["blockquote"] = TagType.Block;
+            dict["body"] = TagType.Block;
+            dict["br"] = TagType.SingleInline;
+            dict["button"] = TagType.BlockInline;
+            dict["canvas"] = TagType.Block;
+            dict["caption"] = TagType.BlockOneLine;
+            dict["cite"] = TagType.BlockInline;
+            dict["code"] = TagType.BlockInline;
+            dict["col"] = TagType.SingleOwnLine;
+            dict["colgroup"] = TagType.Block;
+            dict["data"] = TagType.BlockInline;
+            dict["datalist"] = TagType.Block;
+            dict["dd"] = TagType.BlockOneLine;
+            dict["del"] = TagType.BlockInline;
+            dict["details"] = TagType.Block;
+            dict["dfn"] = TagType.BlockInline;
+            dict["dialog"] = TagType.BlockOneLine;
+            dict["div"] = TagType.Block;
+            dict["dl"] = TagType.Block;
+            dict["dt"] = TagType.BlockOneLine;
+            dict["em"] = TagType.BlockInline;
+            dict["embed"] = TagType.SingleOwnLine;
+            dict["fieldset"] = TagType.Block;
+            dict["figcaption"] = TagType.BlockOneLine;
+            dict["figure"] = TagType.Block;
+            dict["footer"] = TagType.Block;
+            dict["form"] = TagType.Block;
+            dict["h1"] = TagType.BlockOneLine;
+            dict["h2"] = TagType.BlockOneLine;
+            dict["h3"] = TagType.BlockOneLine;
+            dict["h4"] = TagType.BlockOneLine;
+            dict["h5"] = TagType.BlockOneLine;
+            dict["h6"] = TagType.BlockOneLine;
+            dict["head"] = TagType.Block;
+            dict["header"] = TagType.Block;
+            dict["hr"] = TagType.SingleOwnLine;
+            dict["html"] = TagType.BlockNoIndent;
+            dict["i"] = TagType.BlockInline;
+            dict["iframe"] = TagType.Block;
+            dict["img"] = TagType.SingleOwnLine;
+            dict["input"] = TagType.SingleOwnLine;
+            dict["ins"] = TagType.BlockInline;
+            dict["kbd"] = TagType.BlockInline;
+            dict["label"] = TagType.BlockOneLine;
+            dict["legend"] = TagType.BlockOneLine;
+            dict["li"] = TagType.BlockOneLine;
+            dict["link"] = TagType.SingleOwnLine;
+            dict["main"] = TagType.Block;
+            dict["map"] = TagType.Block;
+            dict["mark"] = TagType.BlockInline;
+            dict["meta"] = TagType.SingleOwnLine;
+            dict["meter"] = TagType.BlockOneLine;
+            dict["nav"] = TagType.Block;
+            dict["noscript"] = TagType.BlockOneLine;
+            dict["object"] = TagType.Block;
+            dict["ol"] = TagType.Block;
+            dict["optgroup"] = TagType.Block;
+            dict["option"] = TagType.BlockOneLine;
+            dict["output"] = TagType.BlockOneLine;
+            dict["p"] = TagType.BlockOneLine;
+            dict["param"] = TagType.SingleOwnLine;
+            dict["picture"] = TagType.Block;
+            dict["pre"] = TagType.Preformatted;
+            dict["progress"] = TagType.BlockOneLine;
+            dict["q"] = TagType.BlockInline;
+            dict["rp"] = TagType.BlockInline;
+            dict["rt"] = TagType.BlockInline;
+            dict["ruby"] = TagType.Block;
+            dict["s"] = TagType.BlockInline;
+            dict["samp"] = TagType.BlockInline;
+            dict["script"] = TagType.Block;
+            dict["section"] = TagType.Block;
+            dict["select"] = TagType.Block;
+            dict["small"] = TagType.BlockInline;
+            dict["source"] = TagType.SingleOwnLine;
+            dict["span"] = TagType.BlockInline;
+            dict["strong"] = TagType.BlockInline;
+            dict["style"] = TagType.Block;
+            dict["sub"] = TagType.BlockInline;
+            dict["summary"] = TagType.BlockOneLine;
+            dict["sup"] = TagType.BlockInline;
+            dict["svg"] = TagType.Block;
+            dict["table"] = TagType.Block;
+            dict["tbody"] = TagType.Block;
+            dict["td"] = TagType.BlockOneLine;
+            dict["template"] = TagType.Block;
+            dict["textarea"] = TagType.Preformatted;
+            dict["tfoot"] = TagType.Block;
+            dict["th"] = TagType.BlockOneLine;
+            dict["thead"] = TagType.Block;
+            dict["time"] = TagType.BlockInline;
+            dict["title"] = TagType.BlockOneLine;
+            dict["tr"] = TagType.Block;
+            dict["track"] = TagType.SingleOwnLine;
+            dict["u"] = TagType.BlockInline;
+            dict["ul"] = TagType.Block;
+            dict["var"] = TagType.BlockInline;
+            dict["video"] = TagType.Block;
+            dict["wbr"] = TagType.SingleInline;
             return dict;
         }
 
-        private TagType FindTagType()
+        private static TagType FindTagType(string tag)
         {
-            bool isBlockTag = blockTags.Contains(tag);
-            bool isSelfClosing = selfClodingTags.Contains(tag);
-            if (isBlockTag)
-                return TagType.UsualBlock;
-            if (isSelfClosing)
-                return TagType.SelfClosing;
-
+            try
+            {
+                return tagTypeLookUpTable[tag];
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e);
+                return TagType.Block;
+            }
         }
 
-        internal HtmlBuilder Property(string key, string value)
+        internal HtmlBuilder Property(string key, string? value = null)
         {
             properties[key] = value;
             return this;
@@ -269,8 +408,6 @@ namespace ShogiWebsite
 
         internal HtmlBuilder Child(object child)
         {
-            if (!blockTags.Contains(tag))
-                return this;
             if (child is HtmlBuilder builder)
                 builder.depth = depth + 1;
             children.Add(child);
@@ -278,37 +415,114 @@ namespace ShogiWebsite
         }
 
         // Use StringBuilder from Parent
-        internal override string Build() => FillBuilder(new StringBuilder()).ToString();
-
-        private StringBuilder FillBuilder(StringBuilder builder)
-        {
-            builder = builder.AppendLine($"<{tag} {PropertiesToString()}>");
-            if (!blockTags.Contains(tag))
-                return builder;
-            foreach (var child in children)
-                builder = builder.AppendLine(ChildToString(child));
-            return builder.AppendLine(Helper.Indent(depth, $"</{tag}>"));
-        }
-
-        private string PropertiesToString()
+        internal override string Build()
         {
             StringBuilder builder = new();
-            foreach (var property in properties)
-                builder.Append($"{property.Key}=\"{property.Value}\" ");
-            return builder.ToString().Trim();
+            FillBuilder(builder);
+            return builder.ToString();
         }
 
-        private string ChildToString(object child)
+        private void FillBuilder(StringBuilder builder)
         {
-            StringBuilder builder = new(Helper.RepeatString("\t", depth + 1));
-            if (child is decimal decimalChild)
-                child = decimalChild.ToString();
-            if (child is string || child.GetType().IsPrimitive)
-                return builder.Append(child).ToString();
+            if (tagType == (tagType & TagType.Paired))
+                AddPairedTag(builder);
+            else if (tagType == (tagType & TagType.Unpaired))
+                AddUnpairedTag(builder);
+        }
+
+        private void AddStartTag(StringBuilder builder)
+        {
+            builder.Append('<').Append(tag);
+            AddProperties(builder);
+            builder.Append('>');
+        }
+
+        private void AddEndTag(StringBuilder builder)
+        {
+            builder.Append($"</{tag}>");
+        }
+
+        private void AddSingleTag(StringBuilder builder)
+        {
+            builder.Append('<').Append(tag);
+            AddProperties(builder);
+            builder.Append("/>");
+        }
+
+        private void AddPairedTag(StringBuilder builder)
+        {
+            bool newLine = tagType == (tagType & TagType.NewLine);
+            bool childNewLine = tagType == (tagType & TagType.ChildNewLine);
+            if (newLine)
+                NextLine(builder);
+            AddStartTag(builder);
+            if (childNewLine)
+                builder.Append('\n');
+            foreach (object child in children)
+                AddChild(builder, child);
+            if (childNewLine)
+                NextLine(builder);
+            AddEndTag(builder);
+            if (newLine)
+                builder.Append('\n');
+        }
+
+        private void AddUnpairedTag(StringBuilder builder)
+        {
+            bool newLine = tagType == (tagType & TagType.NewLine);
+            if (newLine)
+                NextLine(builder);
+            AddSingleTag(builder);
+            if (newLine)
+                builder.Append('\n');
+        }
+
+        private void NextLine(StringBuilder builder)
+        {
+            if (!Helper.LastIsNewLine(builder))
+                builder.Append('\n');
+            Helper.AddIndent(builder, depth);
+        }
+
+        private void AddProperties(StringBuilder builder)
+        {
+            foreach (var property in properties)
+            {
+                if (property.Value == null)
+                    builder.Append($" {property.Key}");
+                else
+                    builder.Append($" {property.Key}=\"{property.Value}\"");
+            }
+        }
+
+        private void AddChild(StringBuilder builder, object child)
+        {
+            if (child is string stringChild)
+            {
+                string[] lines = stringChild.Split('\n');
+                if (lines.Length > 1)
+                {
+                    foreach (string line in lines)
+                    {
+                        AddChild(builder, line);
+                        builder.Append('\n');
+                    }
+                    return;
+                }
+            }
+            if (child is decimal or string || child.GetType().IsPrimitive)
+            {
+                if (Helper.LastIsNewLine(builder))
+                {
+                    if (tagType == TagType.Block)
+                        Helper.AddIndent(builder, depth + 1);
+                    else if (tagType == TagType.BlockNoIndent)
+                        Helper.AddIndent(builder, depth);
+                }
+                builder.Append(child);
+            }
             else if (child is HtmlBuilder childBuilder)
-                return builder.Append(childBuilder.Build()).ToString();
-            else
-                return "";
+                childBuilder.FillBuilder(builder);
         }
 
         internal override HtmlBuilder Reset() => new(tag);
