@@ -1,0 +1,13 @@
+﻿12x12
+l ,fl,c ,s ,g ,de,k ,g ,s ,c ,fl,l
+rc,_ ,b ,_ ,bt,ph,kr,bt,_ ,b ,_ ,rc
+sm,vm,r ,dh,dk,q ,ln,dk,dh,r ,vm,sm
+p ,p ,p ,p ,p ,p ,p ,p, p, p, p, p
+_ ,_ ,_ ,gb,_ ,_ ,_ ,_ ,gb,_ ,_ ,_
+_ ,_ ,_ ,_ ,_ ,_ ,_ ,_ ,_ ,_ ,_ ,_
+_ ,_ ,_ ,_ ,_ ,_ ,_ ,_ ,_ ,_ ,_ ,_
+_ ,_ ,_ ,GB,_ ,_ ,_ ,_ ,GB,_ ,_ ,_
+P ,P ,P ,P ,P ,P ,P ,P ,P ,P ,P ,P
+SM,VM,R ,DH,DK,Q ,LN,DK,DH,R ,VM,SM
+RC,_ ,B ,_ ,BT,PH,KR,BT,_ ,B ,_ ,RC
+L ,FL,C ,S ,G ,DE,K ,G ,S ,C ,FL,L

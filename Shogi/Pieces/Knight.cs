@@ -3,24 +3,29 @@
     internal class Knight : Piece
     {
         /// <summary>Knight on the board</summary>
-        internal Knight(Player player, Square square) : base(player, true, square) { }
+        internal Knight(Player player, Board board, Coordinate coordinate) : base(player, true, board, coordinate)
+        { }
+
+        internal Knight(Player player, Board board, int column, int row) : base(player, true, board, column, row)
+        { }
 
         /// <summary>Knight on hand<br/>Does not contain an actual square on the board</summary>
-        internal Knight(Player player, Board board) : base(player, true, board) { }
+        internal Knight(Player player, Board board) : base(player, true, board)
+        { }
 
-        internal override IEnumerable<Square> FindMoves() => isPromoted ? GoldMoves() : KnightMoves();
+        internal override IEnumerable<Coordinate> FindMoves() => isPromoted ? GoldMoves() : KnightMoves();
 
-        private IEnumerable<Square> KnightMoves()
+        private IEnumerable<Coordinate> KnightMoves()
         {
-            var left = KnightMoveLeft();
-            if (left != null && IsAvailableSquare(left))
-                yield return left;
-            var right = KnightMoveRight();
-            if (right != null && IsAvailableSquare(right))
-                yield return right;
+            var left = Knight(true);
+            if (left != null && IsAvailableSquare(left.Value))
+                yield return left.Value;
+            var right = Knight(false);
+            if (right != null && IsAvailableSquare(right.Value))
+                yield return right.Value;
         }
 
-        internal override IEnumerable<Square> FindDrops()
+        internal override IEnumerable<Coordinate> FindDrops()
         {
             int min = player.isPlayer1 ? 2 : 0;
             int max = player.isPlayer1 ? 8 : 6;
@@ -28,16 +33,16 @@
             {
                 for (int j = 0; j < 9; j++)
                 {
-                    var square = board.squares[j, i];
-                    if (square.piece == null)
-                        yield return square;
+                    var coord = new Coordinate(i, j);
+                    if (board.PieceAt(coord) == null)
+                        yield return coord;
                 }
             }
         }
 
         internal override void ForcePromote()
         {
-            int row = square.rowIndex;
+            int row = coordinate.Row;
             if (!isPromoted && (player.isPlayer1 ? row <= 1 : row >= 7)) Promote();
         }
     }

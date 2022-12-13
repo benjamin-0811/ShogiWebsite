@@ -3,21 +3,26 @@
     internal class Pawn : Piece
     {
         /// <summary>Pawn on the board</summary>
-        internal Pawn(Player player, Square square) : base(player, true, square) { }
+        internal Pawn(Player player, Board board, Coordinate coordinate) : base(player, true, board, coordinate)
+        { }
+
+        internal Pawn(Player player, Board board, int column, int row) : base(player, true, board, column, row)
+        { }
 
         /// <summary>Pawn on hand<br/>Does not contain an actual square on the board</summary>
-        internal Pawn(Player player, Board board) : base(player, true, board) { }
+        internal Pawn(Player player, Board board) : base(player, true, board)
+        { }
 
-        internal override IEnumerable<Square> FindMoves() => isPromoted ? GoldMoves() : PawnMove();
+        internal override IEnumerable<Coordinate> FindMoves() => isPromoted ? GoldMoves() : PawnMove();
 
-        private IEnumerable<Square> PawnMove()
+        private IEnumerable<Coordinate> PawnMove()
         {
-            Square? front = Forward();
-            if (front != null && DifferentPlayer(front))
-                yield return front;
+            Coordinate? front = Front()(coordinate, 1, true);
+            if (front != null && DifferentPlayer(front.Value))
+                yield return front.Value;
         }
 
-        internal override IEnumerable<Square> FindDrops()
+        internal override IEnumerable<Coordinate> FindDrops()
         {
             int min = player.isPlayer1 ? 1 : 0;
             int max = player.isPlayer1 ? 8 : 7;
@@ -25,9 +30,10 @@
             {
                 for (int j = min; j <= max; j++)
                 {
-                    Square square = board.squares[i, j];
-                    if (square.piece == null && !WouldCheckmate(square))
-                        yield return square;
+                    Piece? piece = board.pieces[i, j];
+                    Coordinate coord = new(i, j);
+                    if (piece == null && !WouldCheckmate(coord))
+                        yield return coord;
                 }
             }
         }
@@ -41,7 +47,7 @@
             {
                 for (int j = min; j <= max; j++)
                 {
-                    Piece? piece = board.squares[i, j].piece;
+                    Piece? piece = board.pieces[i, j];
                     if (IsOwnPawn(piece))
                     {
                         colHasPawn[i] = true;
@@ -59,23 +65,23 @@
         private bool IsOwnPawn(Piece? piece) => piece is Pawn && !piece.isPromoted && DifferentPlayer(piece);
 
         // WIP
-        private bool WouldCheckmate(Square square)
+        private bool WouldCheckmate(Coordinate square)
         {
             BetterConsole.Info($"See if {IdentifyingString()} would checkmate the opponent's king.");
-            Square currentSquare = this.square;
-            this.square = square;
-            square.piece = this;
+            Coordinate currentSquare = this.coordinate;
+            this.coordinate = square;
+            board.SetPiece(this, square);
             player.boardPieces.Add(this);
             bool result = player.Opponent().king.IsCheckmate();
             player.boardPieces.Remove(this);
-            square.piece = null;
-            this.square = currentSquare;
+            board.SetPiece(null, square);
+            this.coordinate = currentSquare;
             return result;
         }
 
         internal override void ForcePromote()
         {
-            int row = square.rowIndex;
+            int row = coordinate.Row;
             if (!isPromoted && (player.isPlayer1 ? row == 0 : row == 8))
                 Promote();
         }

@@ -1,4 +1,5 @@
 ﻿using System.Text;
+using System.Text.Json;
 
 namespace ShogiWebsite
 {
@@ -81,7 +82,7 @@ namespace ShogiWebsite
     internal class CssBuilder : AbstractBuilder<string>
     {
         private readonly List<string> selectors;
-        private readonly List<KeyValuePair<string, string>> styles;
+        private readonly Dictionary<string, string> styles;
         private readonly int indentTabs;
 
         internal CssBuilder(int indentTabs = 1)
@@ -100,66 +101,58 @@ namespace ShogiWebsite
 
         internal CssBuilder Style(string key, string value)
         {
-            // Find out if the key already exists, if it does replace it
-            KeyValuePair<string, string>? style = null;
-            foreach (KeyValuePair<string, string> s in styles)
-            {
-                if (s.Key == key)
-                {
-                    style = s;
-                    break;
-                }
-            }
-            if (style != null)
-                styles.Remove((KeyValuePair<string, string>)style);
-            styles.Add(new KeyValuePair<string, string>(key, value));
+            styles[key] = value;
             return this;
         }
 
         internal CssBuilder DeleteSytle(string key)
         {
-            foreach(var s in styles)
-            {
-                if (s.Key == key)
-                {
-                    styles.Remove(s);
-                    break;
-                }
-            }
+            styles.Remove(key);
             return this;
         }
 
-        internal override string Build() => $"{SelectorsToString()} {StylesToString()}";
+        internal override string Build()
+        {
+            if (selectors.Count <= 0 || styles.Count <= 0)
+                return "";
+            StringBuilder builder = new();
+            AddSelectors(builder);
+            builder.Append(' ');
+            AddStyles(builder);
+            return builder.ToString();
+        }
 
-        private string SelectorsToString()
+        private void AddSelectors(StringBuilder builder)
         {
             int length = selectors.Count;
             if (length <= 0)
-                return "";
-            StringBuilder builder = new(Helper.Indent(indentTabs));
+                return;
+            Helper.AddIndent(builder, indentTabs);
             for (int i = 0; i < length - 1; i++)
                 builder.Append($"{selectors[i]}, ");
-            return builder.Append($"{selectors[length - 1]}").ToString(); ;
+            builder.Append(selectors[length - 1]);
         }
 
-        private string StyleToString(int index)
+        private void AddStyle(StringBuilder builder, KeyValuePair<string, string> style)
         {
-            int length = styles.Count;
-            if (index >= length)
-                return "";
-            KeyValuePair<string, string> s = styles[index];
-            return $"{s.Key}: {s.Value};";
+            Helper.AddIndent(builder, indentTabs + 1);
+            builder.AppendLine($"{style.Key}: {style.Value};");
         }
 
-        private string StylesToString()
+        private void AddStyles(StringBuilder builder)
         {
+            builder.Append('{');
             int length = styles.Count;
             if (length <= 0)
-                return "{ }";
-            StringBuilder builder = new("{");
-            for (int i = 0; i < length; i++)
-                builder.Append(Helper.RepeatString("  ", indentTabs + 2) + StyleToString(i));
-            return builder.Append(Helper.RepeatString("  ", indentTabs) + "}").ToString();
+            {
+                builder.AppendLine(" }");
+                return;
+            }
+            builder.Append('\n');
+            foreach (KeyValuePair<string, string> style in styles)
+                AddStyle(builder, style);
+            Helper.AddIndent(builder, indentTabs);
+            builder.AppendLine("}");
         }
 
         internal override CssBuilder Reset() => new(indentTabs);
@@ -200,25 +193,25 @@ namespace ShogiWebsite
 
         internal LinesBuilder RemoveLastLine() => RemoveLine(lines.Count - 1);
 
-        internal override string Build() => Build(false);
-
-        internal string Build(bool has4SpaceTab)
+        internal override string Build()
         {
+            // return Build(false);
             int length = lines.Count;
             if (length <= 0)
                 return "";
-            StringBuilder builder = new(WriteLine(0, has4SpaceTab));
-            for (int i = 1; i < length; i++)
-                builder.AppendLine(WriteLine(i, has4SpaceTab));
+            StringBuilder builder = new();
+            for (int i = 0; i < length; i++)
+                AddLine(builder, i);
             return builder.ToString();
         }
 
-        private string WriteLine(int index, bool has4SpaceTab = true)
+        private void AddLine(StringBuilder builder, int index)
         {
             if (index >= lines.Count)
-                return "";
+                return;
             KeyValuePair<string, int> line = lines[index];
-            return Helper.Indent(indentTabs + line.Value, line.Key);
+            Helper.AddIndent(builder, indentTabs + line.Value);
+            builder.AppendLine(line.Key);
         }
 
         internal override LinesBuilder Reset() => new(indentTabs);
@@ -232,7 +225,7 @@ namespace ShogiWebsite
         private readonly List<object> children;
         private int depth;
 
-        private static readonly Dictionary<string, TagType> tagTypeLookUpTable = CreateTagTypeLookUpTable();
+        private static readonly Dictionary<string, TagType> tagTypeLookUpTable = ReadTagTypeLookUpTable();
 
         internal HtmlBuilder(string tag, TagType tagType)
         {
@@ -269,121 +262,27 @@ namespace ShogiWebsite
             ChildNewLine = Block | BlockNoIndent | Preformatted
         }
 
-        private static Dictionary<string, TagType> CreateTagTypeLookUpTable()
+        internal static TagType StringToTagType(string tagName) => tagName switch
+        {
+            "singleInline" => TagType.SingleInline,
+            "singleOwnLine" => TagType.SingleOwnLine,
+            "blockInline" => TagType.BlockInline,
+            "blockOneLine" => TagType.BlockOneLine,
+            "block" => TagType.Block,
+            "blockNoIndent" => TagType.BlockNoIndent,
+            "preformatted" => TagType.Preformatted,
+            _ => TagType.Block
+        };
+
+        private static Dictionary<string, TagType> ReadTagTypeLookUpTable()
         {
             Dictionary<string, TagType> dict = new();
-            // Add more if there are any missing html tags.
-            dict["!DOCTYPE"] = TagType.SingleOwnLine;
-            dict["a"] = TagType.BlockInline;
-            dict["abbr"] = TagType.BlockInline;
-            dict["address"] = TagType.Block;
-            dict["area"] = TagType.SingleInline;
-            dict["article"] = TagType.Block;
-            dict["aside"] = TagType.Block;
-            dict["audio"] = TagType.Block;
-            dict["b"] = TagType.BlockInline;
-            dict["base"] = TagType.SingleOwnLine;
-            dict["bdi"] = TagType.BlockInline;
-            dict["bdo"] = TagType.BlockInline;
-            dict["blockquote"] = TagType.Block;
-            dict["body"] = TagType.Block;
-            dict["br"] = TagType.SingleInline;
-            dict["button"] = TagType.BlockInline;
-            dict["canvas"] = TagType.Block;
-            dict["caption"] = TagType.BlockOneLine;
-            dict["cite"] = TagType.BlockInline;
-            dict["code"] = TagType.BlockInline;
-            dict["col"] = TagType.SingleOwnLine;
-            dict["colgroup"] = TagType.Block;
-            dict["data"] = TagType.BlockInline;
-            dict["datalist"] = TagType.Block;
-            dict["dd"] = TagType.BlockOneLine;
-            dict["del"] = TagType.BlockInline;
-            dict["details"] = TagType.Block;
-            dict["dfn"] = TagType.BlockInline;
-            dict["dialog"] = TagType.BlockOneLine;
-            dict["div"] = TagType.Block;
-            dict["dl"] = TagType.Block;
-            dict["dt"] = TagType.BlockOneLine;
-            dict["em"] = TagType.BlockInline;
-            dict["embed"] = TagType.SingleOwnLine;
-            dict["fieldset"] = TagType.Block;
-            dict["figcaption"] = TagType.BlockOneLine;
-            dict["figure"] = TagType.Block;
-            dict["footer"] = TagType.Block;
-            dict["form"] = TagType.Block;
-            dict["h1"] = TagType.BlockOneLine;
-            dict["h2"] = TagType.BlockOneLine;
-            dict["h3"] = TagType.BlockOneLine;
-            dict["h4"] = TagType.BlockOneLine;
-            dict["h5"] = TagType.BlockOneLine;
-            dict["h6"] = TagType.BlockOneLine;
-            dict["head"] = TagType.Block;
-            dict["header"] = TagType.Block;
-            dict["hr"] = TagType.SingleOwnLine;
-            dict["html"] = TagType.BlockNoIndent;
-            dict["i"] = TagType.BlockInline;
-            dict["iframe"] = TagType.Block;
-            dict["img"] = TagType.SingleOwnLine;
-            dict["input"] = TagType.SingleOwnLine;
-            dict["ins"] = TagType.BlockInline;
-            dict["kbd"] = TagType.BlockInline;
-            dict["label"] = TagType.BlockOneLine;
-            dict["legend"] = TagType.BlockOneLine;
-            dict["li"] = TagType.BlockOneLine;
-            dict["link"] = TagType.SingleOwnLine;
-            dict["main"] = TagType.Block;
-            dict["map"] = TagType.Block;
-            dict["mark"] = TagType.BlockInline;
-            dict["meta"] = TagType.SingleOwnLine;
-            dict["meter"] = TagType.BlockOneLine;
-            dict["nav"] = TagType.Block;
-            dict["noscript"] = TagType.BlockOneLine;
-            dict["object"] = TagType.Block;
-            dict["ol"] = TagType.Block;
-            dict["optgroup"] = TagType.Block;
-            dict["option"] = TagType.BlockOneLine;
-            dict["output"] = TagType.BlockOneLine;
-            dict["p"] = TagType.BlockOneLine;
-            dict["param"] = TagType.SingleOwnLine;
-            dict["picture"] = TagType.Block;
-            dict["pre"] = TagType.Preformatted;
-            dict["progress"] = TagType.BlockOneLine;
-            dict["q"] = TagType.BlockInline;
-            dict["rp"] = TagType.BlockInline;
-            dict["rt"] = TagType.BlockInline;
-            dict["ruby"] = TagType.Block;
-            dict["s"] = TagType.BlockInline;
-            dict["samp"] = TagType.BlockInline;
-            dict["script"] = TagType.Block;
-            dict["section"] = TagType.Block;
-            dict["select"] = TagType.Block;
-            dict["small"] = TagType.BlockInline;
-            dict["source"] = TagType.SingleOwnLine;
-            dict["span"] = TagType.BlockInline;
-            dict["strong"] = TagType.BlockInline;
-            dict["style"] = TagType.Block;
-            dict["sub"] = TagType.BlockInline;
-            dict["summary"] = TagType.BlockOneLine;
-            dict["sup"] = TagType.BlockInline;
-            dict["svg"] = TagType.Block;
-            dict["table"] = TagType.Block;
-            dict["tbody"] = TagType.Block;
-            dict["td"] = TagType.BlockOneLine;
-            dict["template"] = TagType.Block;
-            dict["textarea"] = TagType.Preformatted;
-            dict["tfoot"] = TagType.Block;
-            dict["th"] = TagType.BlockOneLine;
-            dict["thead"] = TagType.Block;
-            dict["time"] = TagType.BlockInline;
-            dict["title"] = TagType.BlockOneLine;
-            dict["tr"] = TagType.Block;
-            dict["track"] = TagType.SingleOwnLine;
-            dict["u"] = TagType.BlockInline;
-            dict["ul"] = TagType.Block;
-            dict["var"] = TagType.BlockInline;
-            dict["video"] = TagType.Block;
-            dict["wbr"] = TagType.SingleInline;
+            string tagsJson = File.ReadAllText(Program.projectDir + @"\assets\json\html_tags.json");
+            Dictionary<string, string>? jsonObject = JsonSerializer.Deserialize<Dictionary<string, string>>(tagsJson);
+            if (jsonObject == null)
+                return dict;
+            foreach (var jsonProperty in jsonObject)
+                dict[jsonProperty.Key] = StringToTagType(jsonProperty.Value);
             return dict;
         }
 

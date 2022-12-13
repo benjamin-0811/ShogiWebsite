@@ -1,0 +1,16 @@
+﻿15x15
+l ,n ,st,i ,c ,s ,g ,k ,g ,s ,c ,i ,st,n ,l
+rc,_ ,cs,_ ,fl,_ ,bt,de,bt,_ ,fl,_ ,cs,_ ,rc
+_ ,vo,_ ,ab,_ ,ew,ph,ln,kr,ew,_ ,ab,_ ,vo,_
+r ,fd,sm,vm,b ,dh,dk,q ,dk,dh,b ,vm,sm,fd,r
+p ,p ,p ,p ,p ,p ,p ,p ,p ,p ,p ,p ,p ,p ,p
+_ ,_ ,_ ,_ ,gb,_ ,_ ,_ ,_ ,_ ,gb,_ ,_ ,_ ,_
+_ ,_ ,_ ,_ ,_ ,_ ,_ ,_ ,_ ,_ ,_ ,_ ,_ ,_ ,_
+_ ,_ ,_ ,_ ,_ ,_ ,_ ,_ ,_ ,_ ,_ ,_ ,_ ,_ ,_
+_ ,_ ,_ ,_ ,_ ,_ ,_ ,_ ,_ ,_ ,_ ,_ ,_ ,_ ,_
+_ ,_ ,_ ,_ ,GB,_ ,_ ,_ ,_ ,_ ,GB,_ ,_ ,_ ,_
+P ,P ,P ,P ,P ,P ,P ,P ,P ,P ,P ,P ,P ,P ,P
+R ,FD,SM,VM,B ,DH,DK,Q ,DK,DH,B ,VM,SM,FD,R
+_ ,VO,_ ,AB,_ ,EW,PH,LN,KR,EW,_ ,AB,_ ,VO,_
+RC,_ ,CS,_ ,FL,_ ,BT,DE,BT,_ ,FL,_ ,CS,_ ,RC
+L ,N ,ST,I ,C ,S ,G ,K ,G ,S ,C ,I ,ST,N ,L

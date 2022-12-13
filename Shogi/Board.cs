@@ -2,38 +2,73 @@
 
 namespace ShogiWebsite.Shogi
 {
+    internal struct Coordinate
+    {
+        private int column;
+        private int row;
+
+        internal int Column { get => column; set => column = value; }
+        internal int Row { get => row; set => row = value; }
+
+        internal Coordinate(int column, int row)
+        {
+            this.column = column;
+            this.row = row;
+        }
+    }
+
     internal class Board
     {
-        internal Square[,] squares;
+        internal Piece?[,] pieces;
         internal bool isPlayer1Turn;
         internal Player player1;
         internal Player player2;
         /// <summary>no column, row, or piece<br/>used for pieces on hand</summary>
-        internal Square nullSquare;
         internal List<string> log;
         internal bool isOver;
         internal Player? winner;
         internal Phase phase;
-        internal Square? chosenSquare;
+
+        internal static readonly char[] columns = { '9', '8', '7', '6', '5', '4', '3', '2', '1' };
+        internal static readonly char[] rows = { 'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i' };
 
         internal Board()
         {
             // Square [ column , row ]
             player1 = new Player(this, true);
             player2 = new Player(this, false);
-            squares = InitSquares();
-            InitPieces();
+            pieces = new Piece?[9, 9];
+            InitBoard();
             //InitCheckMate();
             isPlayer1Turn = true;
-            nullSquare = new Square(this);
             log = new();
             isOver = false;
             winner = null;
             phase = Phase.ChoosePiece;
-            chosenSquare = null;
             player1.InitLater();
             player2.InitLater();
         }
+
+        internal void SetPiece(Piece? piece, int column, int row)
+        {
+            pieces[column, row] = piece;
+            if (piece != null)
+                piece.coordinate = new Coordinate(column, row);
+        }
+
+        internal void SetPiece(Piece? piece, Coordinate coords) => SetPiece(piece, coords.Column, coords.Row);
+
+        internal static string CoordinateString(int row, int column) => IsOnBoard(column, row) ? $"{rows[row]}{columns[column]}" : "hand";
+
+        internal static string CoordinateString(Coordinate coordinate) => CoordinateString(coordinate.Column, coordinate.Row);
+
+        internal static bool IsOnBoard(int column, int row) => 0 <= column && column < 9 && 0 <= row && row < 9;
+
+        internal static bool IsOnBoard(Coordinate coordinate) => IsOnBoard(coordinate.Column, coordinate.Row);
+
+        internal Piece? PieceAt(int column, int row) => IsOnBoard(column, row) ? pieces[column, row] : null;
+
+        internal Piece? PieceAt(Coordinate coordinate) => PieceAt(coordinate.Column, coordinate.Row);
 
         internal enum Phase
         {
@@ -42,78 +77,152 @@ namespace ShogiWebsite.Shogi
             SelectTarget
         }
 
-        internal Square? GetSquareByCoordinate(string coordinate)
+        internal Piece? GetPieceByCoordinateString(string coordinate)
         {
             if (coordinate.Length != 2)
                 return null;
-            int row = Array.IndexOf(Square.rows, coordinate[0]);
-            int column = Array.IndexOf(Square.columns, coordinate[1]);
-            return nullSquare.SquareAt(column, row);
+            int row = Array.IndexOf(rows, coordinate[0]);
+            int column = Array.IndexOf(columns, coordinate[1]);
+            return PieceAt(column, row);
         }
 
-        private Square[,] InitSquares()
+        private static void DirectionLookMessage(int distance, string direction, int column, int row)
         {
-            Square[,] squares = new Square[9, 9];
-            for (int i = 0; i < 9; i++)
-            {
-                for (int j = 0; j < 9; j++)
-                    squares[i, j] = new Square(i, j, null, this);
-            }
-            return squares;
+            BetterConsole.Info($"Looking {distance} squares {direction} of {CoordinateString(row, column)}");
         }
 
-        private void InitPieces()
+        internal static Coordinate? Direction(Func<int, int, int, bool, Coordinate?> function, Coordinate coord, int distance = 1, bool printLog = true)
+        {
+            return function(coord.Column, coord.Row, distance, printLog);
+        }
+
+        internal static Coordinate? N(int column, int row, int distance = 1, bool printLog = true)
+        {
+            if (printLog)
+                DirectionLookMessage(distance, "north", column, row);
+            int newRow = row - distance;
+            return IsOnBoard(column, newRow) ? new Coordinate(column, newRow) : null;
+        }
+
+        internal static Coordinate? N(Coordinate coord, int distance = 1, bool printLog = true) => Direction(N, coord, distance, printLog);
+
+        internal static Coordinate? S(int column, int row, int distance = 1, bool printLog = true)
+        {
+            if (printLog)
+                DirectionLookMessage(distance, "south", column, row);
+            return N(column, row, -distance, false);
+        }
+
+        internal static Coordinate? S(Coordinate coord, int distance = 1, bool printLog = true) => Direction(S, coord, distance, printLog);
+
+        internal static Coordinate? E(int column, int row, int distance = 1, bool printLog = true)
+        {
+            if (printLog)
+                DirectionLookMessage(distance, "east", column, row);
+            int newColumn = column + distance;
+            return IsOnBoard(newColumn, row) ? new Coordinate(newColumn, row) : null;
+        }
+
+        internal static Coordinate? E(Coordinate coord, int distance = 1, bool printLog = true) => Direction(E, coord, distance, printLog);
+
+        internal static Coordinate? W(int column, int row, int distance = 1, bool printLog = true)
+        {
+            if (printLog)
+                DirectionLookMessage(distance, "west", column, row);
+            return E(column, row, -distance, false);
+        }
+
+        internal static Coordinate? W(Coordinate coord, int distance = 1, bool printLog = true) => Direction(W, coord, distance, printLog);
+
+        internal static Coordinate? NE(int column, int row, int distance = 1, bool printLog = true)
+        {
+            if (printLog)
+                DirectionLookMessage(distance, "north east", column, row);
+            Coordinate? n = N(column, row, distance, false);
+            return n != null ? E(n.Value, distance, false) : null;
+        }
+
+        internal static Coordinate? NE(Coordinate coord, int distance = 1, bool printLog = true) => Direction(NE, coord, distance, printLog);
+
+        internal static Coordinate? NW(int column, int row, int distance = 1, bool printLog = true)
+        {
+            if (printLog)
+                DirectionLookMessage(distance, "north west", column, row);
+            Coordinate? n = N(column, row, distance, false);
+            return n != null ? W(n.Value, distance, false) : null;
+        }
+
+        internal static Coordinate? NW(Coordinate coord, int distance = 1, bool printLog = true) => Direction(NW, coord, distance, printLog);
+
+        internal static Coordinate? SE(int column, int row, int distance = 1, bool printLog = true)
+        {
+            if (printLog)
+                DirectionLookMessage(distance, "south east", column, row);
+            return NW(column, row, -distance, false);
+        }
+
+        internal static Coordinate? SE(Coordinate coord, int distance = 1, bool printLog = true) => Direction(SE, coord, distance, printLog);
+
+        internal static Coordinate? SW(int column, int row, int distance = 1, bool printLog = true)
+        {
+            if (printLog)
+                DirectionLookMessage(distance, "south west", column, row);
+            return NE(column, row, -distance, false);
+        }
+
+        internal static Coordinate? SW(Coordinate coord, int distance = 1, bool printLog = true) => Direction(SW, coord, distance, printLog);
+
+        private void InitBoard()
         {
             BetterConsole.Action("Setup all pieces on the board");
             // Pawn
             for (int i = 0; i < 9; i++)
             {
-                squares[i, 2].piece = new Pawn(player2, squares[i, 2]);
-                squares[i, 6].piece = new Pawn(player1, squares[i, 6]);
+                SetPiece(new Pawn(player2, this), i, 2);
+                SetPiece(new Pawn(player1, this), i, 6);
             }
             // Bishop
-            squares[7, 1].piece = new Bishop(player2, squares[7, 1]);
-            squares[1, 7].piece = new Bishop(player1, squares[1, 7]);
+            SetPiece(new Bishop(player2, this), 7, 1);
+            SetPiece(new Bishop(player1, this), 1, 7);
             // Rook
-            squares[1, 1].piece = new Rook(player2, squares[1, 1]);
-            squares[7, 7].piece = new Rook(player1, squares[7, 7]);
+            SetPiece(new Rook(player2, this), 1, 1);
+            SetPiece(new Rook(player1, this), 7, 7);
             // Lance
-            squares[0, 0].piece = new Lance(player2, squares[0, 0]);
-            squares[0, 8].piece = new Lance(player1, squares[0, 8]);
-            squares[8, 0].piece = new Lance(player2, squares[8, 0]);
-            squares[8, 8].piece = new Lance(player1, squares[8, 8]);
+            SetPiece(new Lance(player2, this), 0, 0);
+            SetPiece(new Lance(player1, this), 0, 8);
+            SetPiece(new Lance(player2, this), 8, 0);
+            SetPiece(new Lance(player1, this), 8, 8);
             // Knight
-            squares[1, 0].piece = new Knight(player2, squares[1, 0]);
-            squares[1, 8].piece = new Knight(player1, squares[1, 8]);
-            squares[7, 0].piece = new Knight(player2, squares[7, 0]);
-            squares[7, 8].piece = new Knight(player1, squares[7, 8]);
+            SetPiece(new Knight(player2, this), 1, 0);
+            SetPiece(new Knight(player1, this), 1, 8);
+            SetPiece(new Knight(player2, this), 7, 0);
+            SetPiece(new Knight(player1, this), 7, 8);
             // Silver General
-            squares[2, 0].piece = new Silver(player2, squares[2, 0]);
-            squares[2, 8].piece = new Silver(player1, squares[2, 8]);
-            squares[6, 0].piece = new Silver(player2, squares[6, 0]);
-            squares[6, 8].piece = new Silver(player1, squares[6, 8]);
+            SetPiece(new Silver(player2, this), 2, 0);
+            SetPiece(new Silver(player1, this), 2, 8);
+            SetPiece(new Silver(player2, this), 6, 0);
+            SetPiece(new Silver(player1, this), 6, 8);
             // Gold General
-            squares[3, 0].piece = new Gold(player2, squares[3, 0]);
-            squares[3, 8].piece = new Gold(player1, squares[3, 8]);
-            squares[5, 0].piece = new Gold(player2, squares[5, 0]);
-            squares[5, 8].piece = new Gold(player1, squares[5, 8]);
+            SetPiece(new Gold(player2, this), 3, 0);
+            SetPiece(new Gold(player1, this), 3, 8);
+            SetPiece(new Gold(player2, this), 5, 0);
+            SetPiece(new Gold(player1, this), 5, 8);
             // King
-            squares[4, 0].piece = new King(player2, squares[4, 0]);
-            squares[4, 8].piece = new King(player1, squares[4, 8]);
+            SetPiece(new King(player2, this), 4, 0);
+            SetPiece(new King(player1, this), 4, 8);
         }
 
-        internal void InitCheckMate()
+        private void InitCheckMate()
         {
             // player1
-            squares[3, 8].piece = new Gold(player1, squares[3, 8]);
-            squares[4, 7].piece = new Gold(player1, squares[4, 7]);
-            squares[4, 8].piece = new King(player1, squares[4, 8]);
+            SetPiece(new Gold(player1, this), 3, 8);
+            SetPiece(new Gold(player1, this), 4, 7);
+            SetPiece(new King(player1, this), 4, 8);
             // player2
-            squares[5, 7].piece = new Rook(player2, squares[5, 7]);
-            squares[5, 8].piece = new Rook(player2, squares[5, 8]);
-            squares[8, 2].piece = new Bishop(player2, squares[8, 2]);
-            squares[4, 0].piece = new King(player2, squares[4, 0]);
-
+            SetPiece(new Rook(player2, this), 5, 7);
+            SetPiece(new Rook(player2, this), 5, 8);
+            SetPiece(new Bishop(player2, this), 8, 2);
+            SetPiece(new King(player2, this), 4, 0);
         }
 
         internal string ToHtml()
@@ -123,7 +232,7 @@ namespace ShogiWebsite.Shogi
             {
                 string subText = "";
                 for (int j = 0; j < 9; j++)
-                    subText += squares[j, i].ToHtml();
+                    subText += SquareHtml(new Coordinate(j, i));
                 text += $"<div class=\"row\">{subText}</div>";
             }
             return text + "</div>";
@@ -186,6 +295,38 @@ namespace ShogiWebsite.Shogi
                 .Line("</div>")
                 .Line("</div>");
             return builder.Build();
+        }
+
+        // more square stuff
+        internal string? SquareHtml(Coordinate coordinate)
+        {
+            Piece? piece = PieceAt(coordinate);
+            bool isPlayersTurn = piece != null && IsPlayersTurn(piece.player);
+            bool notOver = !isOver;
+            bool isPromotable = piece != null && piece.canPromote && !piece.IsPromoted();
+            string promotable = isPlayersTurn && notOver && isPromotable ? " promotable" : "";
+            string forcePromote = "";
+            if (isPlayersTurn && notOver && isPromotable)
+            {
+                if (piece is Pawn or Lance)
+                    forcePromote = " forcePromo1";
+                else if (piece is Knight)
+                    forcePromote = " forcePromo2";
+            }
+            string text = $"<div id=\"{coordinate.Row}{coordinate.Column}\" class=\"square{promotable}{forcePromote}\"";
+            if (isPlayersTurn && notOver)
+                text += $" onclick=\"selectMoves(\'{coordinate.Row}{coordinate.Column}\');\"";
+            return text + $">\n{HtmlPieceImage(piece)}\n</div>";
+        }
+
+        private string HtmlPieceClass(Piece? piece) => piece == null ? "" : $"class=\"{(piece.player.isPlayer1 ? "black" : "white")}-piece\"";
+
+        private string HtmlPieceImage(Piece? piece)
+        {
+            string class_ = HtmlPieceClass(piece);
+            string src = $"src=\"data:image/png;base64,{Images.Get(piece)}\"";
+            string alt = $"alt=\"{Names.Get(piece)}\"";
+            return $"<img {class_} {src} {alt}>";
         }
     }
 }

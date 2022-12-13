@@ -381,15 +381,15 @@ namespace ShogiWebsite
             }
             else if (actionCode.Length == 5 || promotion)
             {
-                int r1 = Array.IndexOf(Square.rows, actionCode[0]);
-                int c1 = Array.IndexOf(Square.columns, actionCode[1]);
-                int r2 = Array.IndexOf(Square.rows, actionCode[3]);
-                int c2 = Array.IndexOf(Square.columns, actionCode[4]);
-                Piece? piece = board.squares[c1, r1].piece;
+                int r1 = Array.IndexOf(Board.rows, actionCode[0]);
+                int c1 = Array.IndexOf(Board.columns, actionCode[1]);
+                int r2 = Array.IndexOf(Board.rows, actionCode[3]);
+                int c2 = Array.IndexOf(Board.columns, actionCode[4]);
+                Piece? piece = board.pieces[c1, r1];
                 if (piece != null)
                 {
                     if (board.IsPlayersTurn(piece.player))
-                        switchPlayer = piece.Move(board.squares[c2, r2], promotion);
+                        switchPlayer = piece.Move(new Coordinate(c2, r2), promotion);
                     else
                         BetterConsole.Error("Wrong player on the move!");
                 }
@@ -399,11 +399,11 @@ namespace ShogiWebsite
             else if (actionCode.Length == 4)
             {
                 string abbr = $"{actionCode[0]}";
-                int r1 = Array.IndexOf(Square.rows, actionCode[2]);
-                int c1 = Array.IndexOf(Square.columns, actionCode[3]);
+                int r1 = Array.IndexOf(Board.rows, actionCode[2]);
+                int c1 = Array.IndexOf(Board.columns, actionCode[3]);
                 Piece? piece = player.PieceFromHandByAbbr(abbr);
                 if (piece != null)
-                    switchPlayer = piece.MoveFromHand(board.squares[c1, r1]);
+                    switchPlayer = piece.MoveFromHand(new Coordinate(c1, r1));
                 else
                     BetterConsole.Error("There was no piece to move!");
             }

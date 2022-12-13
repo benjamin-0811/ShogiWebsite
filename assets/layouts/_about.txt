@@ -1,0 +1,57 @@
+﻿This directory contains layouts for any shogi variants,
+however, not all of them have been implemented yet.
+----------------------------------------------------------------------------------------------------
+File format:
+	first line:
+		<width>x<heigth>
+	rest:
+		<piece on (width, 1)>		,<piece on (width - 1, 1)>		,...	,<piece on (1, 1)>
+		<piece on (width, 2)>		,<piece on (width - 1, 2)>		,...	,<piece on (1, 2)>
+		...							,...							,...	,...
+		<piece on (width, height)>	,<piece on (width - 1, height)>	,...	,<piece on (1, height)>
+----------------------------------------------------------------------------------------------------
+Example file:
+	9x9
+	l ,n ,s ,g ,k ,g ,s ,n ,l
+	_ ,r ,_ ,_ ,_ ,_ ,_ ,b ,_
+	p ,p ,p ,p ,p ,p ,p ,p ,p
+	_ ,_ ,_ ,_ ,_ ,_ ,_ ,_ ,_
+	_ ,_ ,_ ,_ ,_ ,_ ,_ ,_ ,_
+	_ ,_ ,_ ,_ ,_ ,_ ,_ ,_ ,_
+	P ,P ,P ,P ,P ,P ,P ,P ,P
+	_ ,B ,_ ,_ ,_ ,_ ,_ ,R ,_
+	L ,N ,S ,G ,K ,G ,S ,N ,L
+----------------------------------------------------------------------------------------------------
+player 1 (black) : uppercase letters, ie.: K, B, R, ...
+player 2 (white) : lowercase letters, ie.: k, b, r, ...
+----------------------------------------------------------------------------------------------------
+dai shogi pieces:
+	AB: angry boar
+	B : bishop
+	BT: blind tiger
+	C : copper general
+	CS: cat sword
+	DE: drunk elephant
+	DH: dragon horse
+	DK: dragon king
+	EW: evil wolf
+	FD: flying dragon
+	FL: ferocious leopard
+	GB: gobetween
+	G : gold general
+	I : iron general
+	K : king
+	KR: kirin
+	L : lance
+	LN: lion
+	N : knight
+	P : pawn
+	PH: phoenix
+	Q : queen
+	R : rook
+	RC: reverse chariot
+	S : silver general
+	SM: side mover
+	ST: stone general
+	VM: vertical mover
+	VO: violent ox
