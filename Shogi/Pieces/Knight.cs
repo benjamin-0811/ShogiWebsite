@@ -17,33 +17,16 @@
 
         private IEnumerable<Coordinate> KnightMoves()
         {
-            var left = Knight(true);
+            Coordinate? left = Knight(true);
             if (left != null && IsAvailableSquare(left.Value))
                 yield return left.Value;
-            var right = Knight(false);
+            Coordinate? right = Knight(false);
             if (right != null && IsAvailableSquare(right.Value))
                 yield return right.Value;
         }
 
-        internal override IEnumerable<Coordinate> FindDrops()
-        {
-            int min = player.isPlayer1 ? 2 : 0;
-            int max = player.isPlayer1 ? 8 : 6;
-            for (int i = min; i <= max; i++)
-            {
-                for (int j = 0; j < 9; j++)
-                {
-                    var coord = new Coordinate(i, j);
-                    if (board.PieceAt(coord) == null)
-                        yield return coord;
-                }
-            }
-        }
+        internal override IEnumerable<Coordinate> FindDrops() => FindDrops(2);
 
-        internal override void ForcePromote()
-        {
-            int row = coordinate.Row;
-            if (!isPromoted && (player.isPlayer1 ? row <= 1 : row >= 7)) Promote();
-        }
+        internal override void ForcePromote() => ForcePromote(2);
     }
 }

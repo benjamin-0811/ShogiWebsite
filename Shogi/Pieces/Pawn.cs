@@ -24,8 +24,8 @@
 
         internal override IEnumerable<Coordinate> FindDrops()
         {
-            int min = player.isPlayer1 ? 1 : 0;
-            int max = player.isPlayer1 ? 8 : 7;
+            int min = MinDropRow(1);
+            int max = MaxDropRow(1);
             foreach (int i in ColumnsWithoutOwnPawns())
             {
                 for (int j = min; j <= max; j++)
@@ -40,10 +40,10 @@
 
         private IEnumerable<int> ColumnsWithoutOwnPawns()
         {
-            int min = player.isPlayer1 ? 1 : 0;
-            int max = player.isPlayer1 ? 8 : 7;
-            bool[] colHasPawn = new bool[9];
-            for (int i = 0; i < 9; i++)
+            int min = MinDropRow(1);
+            int max = MaxDropRow(1);
+            bool[] colHasPawn = new bool[board.width];
+            for (int i = 0; i < board.width; i++)
             {
                 for (int j = min; j <= max; j++)
                 {
@@ -64,26 +64,17 @@
 
         private bool IsOwnPawn(Piece? piece) => piece is Pawn && !piece.isPromoted && DifferentPlayer(piece);
 
-        // WIP
         private bool WouldCheckmate(Coordinate square)
         {
-            BetterConsole.Info($"See if {IdentifyingString()} would checkmate the opponent's king.");
-            Coordinate currentSquare = this.coordinate;
-            this.coordinate = square;
+            Coordinate currentSquare = coordinate;
+            coordinate = square;
             board.SetPiece(this, square);
-            player.boardPieces.Add(this);
             bool result = player.Opponent().king.IsCheckmate();
-            player.boardPieces.Remove(this);
             board.SetPiece(null, square);
-            this.coordinate = currentSquare;
+            coordinate = currentSquare;
             return result;
         }
 
-        internal override void ForcePromote()
-        {
-            int row = coordinate.Row;
-            if (!isPromoted && (player.isPlayer1 ? row == 0 : row == 8))
-                Promote();
-        }
+        internal override void ForcePromote() => ForcePromote(1);
     }
 }

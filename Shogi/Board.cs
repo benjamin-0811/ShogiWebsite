@@ -19,29 +19,34 @@ namespace ShogiWebsite.Shogi
 
     internal class Board
     {
+        internal readonly int width;
+        internal readonly int height;
         internal Piece?[,] pieces;
         internal bool isPlayer1Turn;
         internal Player player1;
         internal Player player2;
-        /// <summary>no column, row, or piece<br/>used for pieces on hand</summary>
-        internal List<string> log;
+        internal HtmlBuilder log;
         internal bool isOver;
         internal Player? winner;
         internal Phase phase;
 
-        internal static readonly char[] columns = { '9', '8', '7', '6', '5', '4', '3', '2', '1' };
-        internal static readonly char[] rows = { 'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i' };
+        internal readonly string[] columns;
+        internal readonly string[] rows;
 
         internal Board()
         {
+            width = 9;
+            height = 9;
+            columns = Columns().ToArray();
+            rows = Rows().ToArray();
             // Square [ column , row ]
+            pieces = new Piece?[9, 9];
             player1 = new Player(this, true);
             player2 = new Player(this, false);
-            pieces = new Piece?[9, 9];
             InitBoard();
             //InitCheckMate();
             isPlayer1Turn = true;
-            log = new();
+            log = new HtmlBuilder().Id("log").Class("log");
             isOver = false;
             winner = null;
             phase = Phase.ChoosePiece;
@@ -49,8 +54,24 @@ namespace ShogiWebsite.Shogi
             player2.InitLater();
         }
 
+        internal void Log(string newEntry) => log.Child(new HtmlBuilder("p").Child(newEntry));
+
+        private IEnumerable<string> Columns()
+        {
+            for (int i = 0; i < width; i++)
+                yield return $"{width - i}";
+        }
+
+        private IEnumerable<string> Rows()
+        {
+            for (int i = 0; i < height; i++)
+                yield return $"{(char)('a' + i)}";
+        }
+
         internal void SetPiece(Piece? piece, int column, int row)
         {
+            if (!IsOnBoard(column, row))
+                return;
             pieces[column, row] = piece;
             if (piece != null)
                 piece.coordinate = new Coordinate(column, row);
@@ -58,13 +79,13 @@ namespace ShogiWebsite.Shogi
 
         internal void SetPiece(Piece? piece, Coordinate coords) => SetPiece(piece, coords.Column, coords.Row);
 
-        internal static string CoordinateString(int row, int column) => IsOnBoard(column, row) ? $"{rows[row]}{columns[column]}" : "hand";
+        internal string CoordinateString(int row, int column) => IsOnBoard(column, row) ? $"{rows[row]}{columns[column]}" : "hand";
 
-        internal static string CoordinateString(Coordinate coordinate) => CoordinateString(coordinate.Column, coordinate.Row);
+        internal string CoordinateString(Coordinate coordinate) => CoordinateString(coordinate.Column, coordinate.Row);
 
-        internal static bool IsOnBoard(int column, int row) => 0 <= column && column < 9 && 0 <= row && row < 9;
+        internal bool IsOnBoard(int column, int row) => 0 <= column && column < width && 0 <= row && row < height;
 
-        internal static bool IsOnBoard(Coordinate coordinate) => IsOnBoard(coordinate.Column, coordinate.Row);
+        internal bool IsOnBoard(Coordinate coordinate) => IsOnBoard(coordinate.Column, coordinate.Row);
 
         internal Piece? PieceAt(int column, int row) => IsOnBoard(column, row) ? pieces[column, row] : null;
 
@@ -86,17 +107,17 @@ namespace ShogiWebsite.Shogi
             return PieceAt(column, row);
         }
 
-        private static void DirectionLookMessage(int distance, string direction, int column, int row)
+        private void DirectionLookMessage(int distance, string direction, int column, int row)
         {
             BetterConsole.Info($"Looking {distance} squares {direction} of {CoordinateString(row, column)}");
         }
 
-        internal static Coordinate? Direction(Func<int, int, int, bool, Coordinate?> function, Coordinate coord, int distance = 1, bool printLog = true)
+        internal Coordinate? Direction(Func<int, int, int, bool, Coordinate?> function, Coordinate coord, int distance = 1, bool printLog = true)
         {
             return function(coord.Column, coord.Row, distance, printLog);
         }
 
-        internal static Coordinate? N(int column, int row, int distance = 1, bool printLog = true)
+        internal Coordinate? N(int column, int row, int distance = 1, bool printLog = true)
         {
             if (printLog)
                 DirectionLookMessage(distance, "north", column, row);
@@ -104,18 +125,18 @@ namespace ShogiWebsite.Shogi
             return IsOnBoard(column, newRow) ? new Coordinate(column, newRow) : null;
         }
 
-        internal static Coordinate? N(Coordinate coord, int distance = 1, bool printLog = true) => Direction(N, coord, distance, printLog);
+        internal Coordinate? N(Coordinate coord, int distance = 1, bool printLog = true) => Direction(N, coord, distance, printLog);
 
-        internal static Coordinate? S(int column, int row, int distance = 1, bool printLog = true)
+        internal Coordinate? S(int column, int row, int distance = 1, bool printLog = true)
         {
             if (printLog)
                 DirectionLookMessage(distance, "south", column, row);
             return N(column, row, -distance, false);
         }
 
-        internal static Coordinate? S(Coordinate coord, int distance = 1, bool printLog = true) => Direction(S, coord, distance, printLog);
+        internal Coordinate? S(Coordinate coord, int distance = 1, bool printLog = true) => Direction(S, coord, distance, printLog);
 
-        internal static Coordinate? E(int column, int row, int distance = 1, bool printLog = true)
+        internal Coordinate? E(int column, int row, int distance = 1, bool printLog = true)
         {
             if (printLog)
                 DirectionLookMessage(distance, "east", column, row);
@@ -123,18 +144,18 @@ namespace ShogiWebsite.Shogi
             return IsOnBoard(newColumn, row) ? new Coordinate(newColumn, row) : null;
         }
 
-        internal static Coordinate? E(Coordinate coord, int distance = 1, bool printLog = true) => Direction(E, coord, distance, printLog);
+        internal Coordinate? E(Coordinate coord, int distance = 1, bool printLog = true) => Direction(E, coord, distance, printLog);
 
-        internal static Coordinate? W(int column, int row, int distance = 1, bool printLog = true)
+        internal Coordinate? W(int column, int row, int distance = 1, bool printLog = true)
         {
             if (printLog)
                 DirectionLookMessage(distance, "west", column, row);
             return E(column, row, -distance, false);
         }
 
-        internal static Coordinate? W(Coordinate coord, int distance = 1, bool printLog = true) => Direction(W, coord, distance, printLog);
+        internal Coordinate? W(Coordinate coord, int distance = 1, bool printLog = true) => Direction(W, coord, distance, printLog);
 
-        internal static Coordinate? NE(int column, int row, int distance = 1, bool printLog = true)
+        internal Coordinate? NE(int column, int row, int distance = 1, bool printLog = true)
         {
             if (printLog)
                 DirectionLookMessage(distance, "north east", column, row);
@@ -142,9 +163,9 @@ namespace ShogiWebsite.Shogi
             return n != null ? E(n.Value, distance, false) : null;
         }
 
-        internal static Coordinate? NE(Coordinate coord, int distance = 1, bool printLog = true) => Direction(NE, coord, distance, printLog);
+        internal Coordinate? NE(Coordinate coord, int distance = 1, bool printLog = true) => Direction(NE, coord, distance, printLog);
 
-        internal static Coordinate? NW(int column, int row, int distance = 1, bool printLog = true)
+        internal Coordinate? NW(int column, int row, int distance = 1, bool printLog = true)
         {
             if (printLog)
                 DirectionLookMessage(distance, "north west", column, row);
@@ -152,25 +173,25 @@ namespace ShogiWebsite.Shogi
             return n != null ? W(n.Value, distance, false) : null;
         }
 
-        internal static Coordinate? NW(Coordinate coord, int distance = 1, bool printLog = true) => Direction(NW, coord, distance, printLog);
+        internal Coordinate? NW(Coordinate coord, int distance = 1, bool printLog = true) => Direction(NW, coord, distance, printLog);
 
-        internal static Coordinate? SE(int column, int row, int distance = 1, bool printLog = true)
+        internal Coordinate? SE(int column, int row, int distance = 1, bool printLog = true)
         {
             if (printLog)
                 DirectionLookMessage(distance, "south east", column, row);
             return NW(column, row, -distance, false);
         }
 
-        internal static Coordinate? SE(Coordinate coord, int distance = 1, bool printLog = true) => Direction(SE, coord, distance, printLog);
+        internal Coordinate? SE(Coordinate coord, int distance = 1, bool printLog = true) => Direction(SE, coord, distance, printLog);
 
-        internal static Coordinate? SW(int column, int row, int distance = 1, bool printLog = true)
+        internal Coordinate? SW(int column, int row, int distance = 1, bool printLog = true)
         {
             if (printLog)
                 DirectionLookMessage(distance, "south west", column, row);
             return NE(column, row, -distance, false);
         }
 
-        internal static Coordinate? SW(Coordinate coord, int distance = 1, bool printLog = true) => Direction(SW, coord, distance, printLog);
+        internal Coordinate? SW(Coordinate coord, int distance = 1, bool printLog = true) => Direction(SW, coord, distance, printLog);
 
         private void InitBoard()
         {
@@ -246,17 +267,9 @@ namespace ShogiWebsite.Shogi
 
         internal bool IsPlayersTurn(Player player) => (player.isPlayer1 && isPlayer1Turn) || !(player.isPlayer1 || isPlayer1Turn);
 
-        internal string LogToHtml()
+        internal HtmlBuilder LogToHtml()
         {
-            // Stringbuilder nutzen
-            string text = "<div id=\"log\" class=\"log\">";
-            int length = log.Count;
-            if (length <= 0)
-                return text + "</div>";
-            text += $"\n{log[0]}";
-            for (int i = 1; i < length; i++)
-                text += $"\n<br>{log[i]}";
-            return text + "\n</div>";
+            return log;
         }
 
         internal void EndGame(Player winner)
@@ -280,53 +293,46 @@ namespace ShogiWebsite.Shogi
 
         internal string ForceKnightPromotion() => $"var knightPromo = {(isPlayer1Turn ? "['a', 'b']" : "['h', 'i']")}";
 
-        internal string GameEndHtml()
+        internal HtmlBuilder GameEndHtml()
         {
+            HtmlBuilder builder = new();
             if (!isOver)
-                return "";
-            var builder = new LinesBuilder();
-            builder
-                .Line("<div id=\"game-end-overlay\">")
-                .Line("<div style=\"background-color:#ffffff;border:2px solid #000000;width:600px;heigth:300px;\">")
-                .Line($"<p>The Winner is: Player {(winner == player1 ? "1" : "2")!}</p>")
-                .Line("<div class=\"button\" onclick=\"restart();\">")
-                .Line("New Game")
-                .Line("</div>")
-                .Line("</div>")
-                .Line("</div>");
-            return builder.Build();
+                return builder;
+            HtmlBuilder button = new HtmlBuilder().Class("button").Property("onclick", "restart").Child("New Game");
+            HtmlBuilder message = new HtmlBuilder("p").Child($"The Winner is: Player {(winner == player1 ? "1" : "2")!}");
+            HtmlBuilder box = new HtmlBuilder().Class("overlay-box").Child(button).Child(message);
+            return builder.Id("game-end-overlay").Child(box);
         }
 
         // more square stuff
-        internal string? SquareHtml(Coordinate coordinate)
+        internal HtmlBuilder SquareHtml(Coordinate coordinate)
         {
+            string coordString = CoordinateString(coordinate);
+            HtmlBuilder builder = new HtmlBuilder().Id(coordString).Class("square");
             Piece? piece = PieceAt(coordinate);
-            bool isPlayersTurn = piece != null && IsPlayersTurn(piece.player);
-            bool notOver = !isOver;
-            bool isPromotable = piece != null && piece.canPromote && !piece.IsPromoted();
-            string promotable = isPlayersTurn && notOver && isPromotable ? " promotable" : "";
-            string forcePromote = "";
-            if (isPlayersTurn && notOver && isPromotable)
+            if (piece != null && IsPlayersTurn(piece.player) && !isOver)
             {
-                if (piece is Pawn or Lance)
-                    forcePromote = " forcePromo1";
-                else if (piece is Knight)
-                    forcePromote = " forcePromo2";
+                if (piece.canPromote && !piece.IsPromoted())
+                {
+                    builder.Class("promotable");
+                    if (piece is Pawn or Lance)
+                        builder.Class("forcePromo1");
+                    else if (piece is Knight)
+                        builder.Class("forcePromo2");
+                }
+                builder.Property("onclick", coordString);
             }
-            string text = $"<div id=\"{coordinate.Row}{coordinate.Column}\" class=\"square{promotable}{forcePromote}\"";
-            if (isPlayersTurn && notOver)
-                text += $" onclick=\"selectMoves(\'{coordinate.Row}{coordinate.Column}\');\"";
-            return text + $">\n{HtmlPieceImage(piece)}\n</div>";
+            return builder.Child(HtmlPieceImage(piece));
         }
 
-        private string HtmlPieceClass(Piece? piece) => piece == null ? "" : $"class=\"{(piece.player.isPlayer1 ? "black" : "white")}-piece\"";
-
-        private string HtmlPieceImage(Piece? piece)
+        private HtmlBuilder HtmlPieceImage(Piece? piece)
         {
-            string class_ = HtmlPieceClass(piece);
-            string src = $"src=\"data:image/png;base64,{Images.Get(piece)}\"";
-            string alt = $"alt=\"{Names.Get(piece)}\"";
-            return $"<img {class_} {src} {alt}>";
+            HtmlBuilder builder = new("img");
+            if (piece != null)
+                builder.Class($"{(piece.player.isPlayer1 ? "black" : "white")}-piece");
+            builder.Property("src", $"data:image/png;base64,{Images.Get(piece)}");
+            builder.Property("alt", Names.Get(piece));
+            return builder;
         }
     }
 }

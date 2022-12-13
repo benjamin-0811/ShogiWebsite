@@ -12,7 +12,7 @@
         /// <summary>null King<br/>Does not contain an actual square on the board</summary>
         internal King(Player player, Board board) : base(player, false, board) { }
 
-        internal override IEnumerable<Coordinate> FindMoves() => ListMoves(new Func<Coordinate, int, bool, Coordinate?>[] { Board.N, Board.NE, Board.E, Board.SE, Board.S, Board.SW, Board.W, Board.NW });
+        internal override IEnumerable<Coordinate> FindMoves() => ListMoves(new Func<Coordinate, int, bool, Coordinate?>[] { board.N, board.NE, board.E, board.SE, board.S, board.SW, board.W, board.NW });
 
         internal bool WouldBeCheckAt(Coordinate at)
         {
@@ -24,10 +24,14 @@
             board.SetPiece(this, at);
             board.SetPiece(atPiece, kingSquare);
             // See if king would be in check
-            foreach(var opponentMoves in player.Opponent().GetMoveLists())
+            foreach(Piece opponentPieces in player.Opponent().PlayersPieces())
             {
-                if (opponentMoves.Value.Contains(at))
+                IEnumerable<Coordinate> moves = opponentPieces.FindMoves();
+                if (moves.Contains(at))
+                {
                     result = true;
+                    break;
+                }
             }
             // Return to old state
             board.SetPiece(this, kingSquare);
@@ -42,12 +46,10 @@
         internal bool IsCheckmate()
         {
             bool f1 = FindMoves().Any();
-            Piece[] potentialPieces = PiecesThatCheckThisKing();
-            if (potentialPieces.Length <= 0)
-                return false;
-            if (potentialPieces.Length > 1)
-                return true;
-            Piece piece = potentialPieces[0];
+            IEnumerable<Piece> potentialPieces = PiecesThatCheckThisKing();
+            if (potentialPieces.Count() != 1)
+                return potentialPieces.Count() > 1;
+            Piece piece = potentialPieces.First();
             IEnumerable<Piece> capturers = GetCapturers(piece);
             bool f2 = capturers.Any();
             bool f3 = CanBlockAttacker(piece);
@@ -57,7 +59,7 @@
         private IEnumerable<Piece> GetCapturers(Piece attacker)
         {
             Coordinate square = attacker.coordinate;
-            IEnumerable<Piece> ownPieces = player.boardPieces;
+            IEnumerable<Piece> ownPieces = player.PlayersPieces();
             foreach (Piece capturer in ownPieces)
             {
                 IEnumerable<Coordinate> availableSquares = capturer.FindMoves();
@@ -75,12 +77,12 @@
         private bool CanBlockAttacker(IEnumerable<Coordinate> squaresInbetween, bool doDrop)
         {
             bool canBlock = false;
-            var lists = doDrop ? player.dropLists : player.moveLists;
+            Dictionary<string, List<Coordinate>> lists = doDrop ? player.dropLists : player.moveLists;
             var protect = doDrop ? protectDrops : protectMoves;
             int length = squaresInbetween.Count();
-            foreach (var list in lists)
+            foreach (KeyValuePair<string, List<Coordinate>> list in lists)
             {
-                var squares = list.Value;
+                List<Coordinate> squares = list.Value;
                 for (int i = 0; i < length; i++)
                 {
                     Coordinate square = squaresInbetween.ElementAt(i);
@@ -97,6 +99,11 @@
                 }
             }
             return canBlock;
+        }
+
+        private Dictionary<Piece, IEnumerator<Coordinate>> BlockAttackerMoves(Piece attacker)
+        {
+
         }
 
         private bool CanBlockAttacker(Piece piece)
@@ -165,17 +172,15 @@
             return squaresInbetween;
         }
 
-        internal Piece[] PiecesThatCheckThisKing()
+        internal IEnumerable<Piece> PiecesThatCheckThisKing()
         {
-            var potentialPieces = player.Opponent().boardPieces;
-            var pieces = new List<Piece>();
+            IEnumerable<Piece> potentialPieces = player.Opponent().PlayersPieces();
             foreach (Piece piece in potentialPieces)
             {
-                var availableSquares = piece.FindMoves();
+                IEnumerable<Coordinate> availableSquares = piece.FindMoves();
                 if (availableSquares.Contains(coordinate))
-                    pieces.Add(piece);
+                    yield return piece;
             }
-            return pieces.ToArray();
         }
     }
 }

@@ -17,26 +17,8 @@
 
         private IEnumerable<Coordinate> LanceMoves() => RangeMoves(new Func<Coordinate, int, bool, Coordinate?>[] { Front() });
 
-        internal override IEnumerable<Coordinate> FindDrops()
-        {
-            int min = player.isPlayer1 ? 1 : 0;
-            int max = player.isPlayer1 ? 8 : 7;
-            for (int i = min; i <= max; i++)
-            {
-                for (int j = 0; j < 9; j++)
-                {
-                    Coordinate coord = new(i, j);
-                    if (board.PieceAt(coord) == null)
-                        yield return coord;
-                }
-            }
-        }
+        internal override IEnumerable<Coordinate> FindDrops() => FindDrops(1);
 
-        internal override void ForcePromote()
-        {
-            int row = coordinate.Row;
-            if (!isPromoted && (player.isPlayer1 ? row == 0 : row == 8))
-                Promote();
-        }
+        internal override void ForcePromote() => ForcePromote(1);
     }
 }

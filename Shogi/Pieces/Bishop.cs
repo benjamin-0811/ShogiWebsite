@@ -15,9 +15,9 @@
 
         internal override IEnumerable<Coordinate> FindMoves()
         {
-            var moves = RangeMoves(new Func<Coordinate, int, bool, Coordinate?>[] { Board.NE, Board.NW, Board.SE, Board.SW });
+            IEnumerable<Coordinate> moves = RangeMoves(new Func<Coordinate, int, bool, Coordinate?>[] { board.NE, board.NW, board.SE, board.SW });
             if (isPromoted)
-                moves = moves.Concat(ListMoves(new Func<Coordinate, int, bool, Coordinate?>[] { Board.N, Board.E, Board.S, Board.W }));
+                moves = moves.Concat(ListMoves(new Func<Coordinate, int, bool, Coordinate?>[] { board.N, board.E, board.S, board.W }));
             return moves;
         }
     }

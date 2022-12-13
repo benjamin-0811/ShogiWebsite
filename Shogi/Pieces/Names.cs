@@ -39,6 +39,19 @@
             _ => ""
         };
 
+        internal static string Get(Type type) => type switch
+        {
+            Type _ when type == typeof(Pawn) => pawn,
+            Type _ when type == typeof(Bishop) => bishop,
+            Type _ when type == typeof(Rook) => rook,
+            Type _ when type == typeof(Lance) => lance,
+            Type _ when type == typeof(Knight) => knight,
+            Type _ when type == typeof(Silver) => silver,
+            Type _ when type == typeof(Gold) => gold,
+            Type _ when type == typeof(King) => king,
+            _ => ""
+        };
+
         /// <summary>Get abbreviation</summary>
         internal static string Abbreviation(Piece? piece)
         {
@@ -58,5 +71,18 @@
                 abbreviation = "+" + abbreviation;
             return abbreviation;
         }
+
+        internal static string Abbreviation(Type type) => type switch
+        {
+            Type _ when type == typeof(Pawn) => abbreviationPawn,
+            Type _ when type == typeof(Bishop) => abbreviationBishop,
+            Type _ when type == typeof(Rook) => abbreviationRook,
+            Type _ when type == typeof(Lance) => abbreviationLance,
+            Type _ when type == typeof(Knight) => abbreviationKnight,
+            Type _ when type == typeof(Silver) => abbreviationSilver,
+            Type _ when type == typeof(Gold) => abbreviationGold,
+            Type _ when type == typeof(King) => abbreviationKing,
+            _ => ""
+        };
     }
 }

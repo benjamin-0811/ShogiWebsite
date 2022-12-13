@@ -26,11 +26,11 @@ namespace ShogiWebsite.Shogi.Pieces
         {
             if (OperatingSystem.IsWindows())
             {
-                var image = Image.FromFile(@$"{Program.projectDir}\assets\img\{imageName}");
-                var stream = new MemoryStream();
+                Image image = Image.FromFile(@$"{Program.projectDir}\assets\img\{imageName}");
+                MemoryStream stream = new();
                 image.Save(stream, ImageFormat.Png);
                 stream.Position = 0;
-                var bytes = stream.ToArray();
+                byte[] bytes = stream.ToArray();
                 return Convert.ToBase64String(bytes);
             }
             else
@@ -47,6 +47,19 @@ namespace ShogiWebsite.Shogi.Pieces
             Silver _ => piece.IsPromoted() ? promotedSilver : silver,
             Gold _ => gold,
             King _ => piece.player.isPlayer1 ? blackKing : whiteKing,
+            _ => nullPiece
+        };
+
+        internal static string Get(Type type) => type switch
+        {
+            Type _ when type == typeof(Pawn) => pawn,
+            Type _ when type == typeof(Bishop) => bishop,
+            Type _ when type == typeof(Rook) => rook,
+            Type _ when type == typeof(Lance) => lance,
+            Type _ when type == typeof(Knight) => knight,
+            Type _ when type == typeof(Silver) => silver,
+            Type _ when type == typeof(Gold) => gold,
+            Type _ when type == typeof(King) => whiteKing,
             _ => nullPiece
         };
     }

@@ -26,17 +26,6 @@ namespace ShogiWebsite.Shogi
         internal Piece(Player player, bool canPromote, Board board) : this(player, canPromote, board, -1, -1)
         { }
 
-        /// <summary>Piece on hand.<br/>Does not contain an actual square on the board</summary>
-        /*
-        internal Piece(Player player, bool canPromote, Board board)
-        {
-            this.player = player;
-            isPromoted = false;
-            this.canPromote = canPromote;
-            this.board = board;
-        }
-        */
-
         /// <summary>
         /// Move this piece from one square to another.<br/>
         /// This piece might promote.<br/>
@@ -47,9 +36,9 @@ namespace ShogiWebsite.Shogi
         /// <returns><c>true</c> if this move was successful</returns>
         internal bool Move(Coordinate to, bool doesPromote)
         {
-            var moves = FindMoves();
+            IEnumerable<Coordinate> moves = FindMoves();
             string piece1S = IdentifyingString();
-            string toS = Board.CoordinateString(coordinate);
+            string toS = board.CoordinateString(coordinate);
             BetterConsole.Info($"Trying to move {piece1S} to {toS}.");
             if (moves != null && moves.Contains(to))
             {
@@ -69,13 +58,13 @@ namespace ShogiWebsite.Shogi
                 }
                 board.SetPiece(null, old);
                 board.SetPiece(this, to);
-                string part1 = $"{Names.Abbreviation(this)}{Board.CoordinateString(old)}";
+                string part1 = $"{Names.Abbreviation(this)}{board.CoordinateString(old)}";
                 bool wasPromoted = isPromoted;
                 ForcePromote();
                 if (wasPromoted != isPromoted)
                     doesPromote = true;
-                string part2 = $"{moveType}{Board.CoordinateString(to)}{(doesPromote ? "+" : "")}";
-                board.log.Add($"{player.PlayerNumber()} : {part1}{part2}");
+                string part2 = $"{moveType}{board.CoordinateString(to)}{(doesPromote ? "+" : "")}";
+                board.Log($"{player.PlayerNumber()} : {part1}{part2}");
                 if (doesPromote)
                     isPromoted = true;
                 return true;
@@ -92,17 +81,17 @@ namespace ShogiWebsite.Shogi
         /// <returns><c>true</c> if this move was successful</returns>
         internal bool MoveFromHand(Coordinate to)
         {
-            var drops = FindDrops();
+            IEnumerable<Coordinate> drops = FindDrops();
             Piece? piece = board.PieceAt(to);
             string pieceS = IdentifyingString();
-            string toS = Board.CoordinateString(to);
+            string toS = board.CoordinateString(to);
             BetterConsole.Info($"Trying to drop {pieceS} on {toS}.");
             if (drops != null && drops.Contains(to) && piece == null && this is not King)
             {
                 player.ChangeHandPieceAmount(this, -1);
                 BetterConsole.Action($"Removed 1 {Names.Get(this)} from {player.PlayerNumber()}'s hand.");
                 board.SetPiece(this, to);
-                board.log.Add($"{player.PlayerNumber()} : {Names.Abbreviation(this)}*{Board.CoordinateString(to)}");
+                board.Log($"{player.PlayerNumber()} : {Names.Abbreviation(this)}*{board.CoordinateString(to)}");
                 BetterConsole.Action($"Dropped {pieceS} on {toS}.");
                 return true;
             }
@@ -142,15 +131,21 @@ namespace ShogiWebsite.Shogi
                 BetterConsole.Error($"{pieceS} cannot be promoted!");
         }
 
-        internal string IdentifyingString() => $"{player.PlayerNumber()}'s {Names.Get(this)} on {Board.CoordinateString(coordinate)}";
+        internal string IdentifyingString() => $"{player.PlayerNumber()}'s {Names.Get(this)} on {board.CoordinateString(coordinate)}";
 
         internal virtual void ForcePromote() { }
 
+        internal void ForcePromote(int rows)
+        {
+            int row = coordinate.Row;
+            if (!isPromoted && (player.isPlayer1 ? row < rows : row >= board.height - rows))
+                Promote();
+        }
         internal bool IsPromoted() => canPromote && isPromoted;
 
         internal bool CanMoveTo(int column, int row)
         {
-            BetterConsole.Info($"See if {IdentifyingString()} can move to {Board.CoordinateString(row, column)}.");
+            BetterConsole.Info($"See if {IdentifyingString()} can move to {board.CoordinateString(row, column)}.");
             IEnumerable<Coordinate> availableSquares = FindMoves();
             return availableSquares.Contains(new Coordinate(column, row));
         }
@@ -167,18 +162,26 @@ namespace ShogiWebsite.Shogi
         /// <summary>
         /// Find all squares where this piece can be dropped from the player's hand
         /// </summary>
-        internal virtual IEnumerable<Coordinate> FindDrops()
+        internal virtual IEnumerable<Coordinate> FindDrops() => FindDrops(0);
+
+        internal IEnumerable<Coordinate> FindDrops(int freeRows)
         {
-            BetterConsole.Info($"Trying to find squares to move to for {IdentifyingString()}");
-            for (int i = 0; i < 9; i++)
+            int min = MinDropRow(freeRows);
+            int max = MaxDropRow(freeRows);
+            for (int i = min; i <= max; i++)
             {
-                for (int j = 0; j < 9; j++)
+                for (int j = 0; j < board.width; j++)
                 {
-                    if (board.pieces[i, j] == null)
-                        yield return new Coordinate(i, j);
+                    Coordinate coord = new(i, j);
+                    if (board.PieceAt(coord) == null)
+                        yield return coord;
                 }
             }
         }
+
+        internal int MinDropRow(int freeRows) => player.isPlayer1 ? freeRows : 0;
+
+        internal int MaxDropRow(int freeRows) => board.height - (player.isPlayer1 ? 0 : freeRows) - 1;
 
         protected IEnumerable<Coordinate> GoldMoves() => ListMoves(new[] { Front(), FrontLeft(), FrontRight(), Left(), Right(), Back() });
 
@@ -293,21 +296,21 @@ namespace ShogiWebsite.Shogi
 
         internal bool DifferentPlayer(Piece piece) => piece.player != player;
 
-        internal Func<Coordinate, int, bool, Coordinate?> Front() => player.isPlayer1 ? Board.N : Board.S;
+        internal Func<Coordinate, int, bool, Coordinate?> Front() => player.isPlayer1 ? board.N : board.S;
 
-        internal Func<Coordinate, int, bool, Coordinate?> Back() => player.isPlayer1 ? Board.S : Board.N;
+        internal Func<Coordinate, int, bool, Coordinate?> Back() => player.isPlayer1 ? board.S : board.N;
 
-        internal Func<Coordinate, int, bool, Coordinate?> Left() => player.isPlayer1 ? Board.W : Board.E;
+        internal Func<Coordinate, int, bool, Coordinate?> Left() => player.isPlayer1 ? board.W : board.E;
 
-        internal Func<Coordinate, int, bool, Coordinate?> Right() => player.isPlayer1 ? Board.E : Board.W;
+        internal Func<Coordinate, int, bool, Coordinate?> Right() => player.isPlayer1 ? board.E : board.W;
 
-        internal Func<Coordinate, int, bool, Coordinate?> FrontLeft() => player.isPlayer1 ? Board.NW : Board.SE;
+        internal Func<Coordinate, int, bool, Coordinate?> FrontLeft() => player.isPlayer1 ? board.NW : board.SE;
 
-        internal Func<Coordinate, int, bool, Coordinate?> FrontRight() => player.isPlayer1 ? Board.NE : Board.SW;
+        internal Func<Coordinate, int, bool, Coordinate?> FrontRight() => player.isPlayer1 ? board.NE : board.SW;
 
-        internal Func<Coordinate, int, bool, Coordinate?> BackLeft() => player.isPlayer1 ? Board.SW : Board.NE;
+        internal Func<Coordinate, int, bool, Coordinate?> BackLeft() => player.isPlayer1 ? board.SW : board.NE;
 
-        internal Func<Coordinate, int, bool, Coordinate?> BackRight() => player.isPlayer1 ? Board.SE : Board.NW;
+        internal Func<Coordinate, int, bool, Coordinate?> BackRight() => player.isPlayer1 ? board.SE : board.NW;
 
         internal Coordinate? Knight(bool left)
         {
@@ -317,6 +320,6 @@ namespace ShogiWebsite.Shogi
             return front != null ? side(front.Value, 1, false) : null;
         }
 
-        internal string CoordinateString() => Board.CoordinateString(coordinate);
+        internal string CoordinateString() => board.CoordinateString(coordinate);
     }
 }

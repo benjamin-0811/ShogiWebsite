@@ -119,6 +119,8 @@ namespace ShogiWebsite
             AddSelectors(builder);
             builder.Append(' ');
             AddStyles(builder);
+            selectors.Clear();
+            styles.Clear();
             return builder.ToString();
         }
 
@@ -155,7 +157,12 @@ namespace ShogiWebsite
             builder.AppendLine("}");
         }
 
-        internal override CssBuilder Reset() => new(indentTabs);
+        internal override CssBuilder Reset()
+        {
+            selectors.Clear();
+            styles.Clear();
+            return this;
+        }
     }
 
     /// <summary>easier way to dynamically write a text on multiple lines</summary>
@@ -195,13 +202,13 @@ namespace ShogiWebsite
 
         internal override string Build()
         {
-            // return Build(false);
             int length = lines.Count;
             if (length <= 0)
                 return "";
             StringBuilder builder = new();
             for (int i = 0; i < length; i++)
                 AddLine(builder, i);
+            lines.Clear();
             return builder.ToString();
         }
 
@@ -214,7 +221,11 @@ namespace ShogiWebsite
             builder.AppendLine(line.Key);
         }
 
-        internal override LinesBuilder Reset() => new(indentTabs);
+        internal override LinesBuilder Reset()
+        {
+            lines.Clear();
+            return this;
+        }
     }
 
     internal class HtmlBuilder : AbstractBuilder<string>
@@ -281,7 +292,7 @@ namespace ShogiWebsite
             Dictionary<string, string>? jsonObject = JsonSerializer.Deserialize<Dictionary<string, string>>(tagsJson);
             if (jsonObject == null)
                 return dict;
-            foreach (var jsonProperty in jsonObject)
+            foreach (KeyValuePair<string, string> jsonProperty in jsonObject)
                 dict[jsonProperty.Key] = StringToTagType(jsonProperty.Value);
             return dict;
         }
@@ -305,6 +316,12 @@ namespace ShogiWebsite
             return this;
         }
 
+        internal HtmlBuilder Id(string value) => Property("id", value);
+
+        internal HtmlBuilder Class(string value) => Property("class", value);
+
+        internal HtmlBuilder Style(string value) => Property("style", value);
+
         internal HtmlBuilder Child(object child)
         {
             if (child is HtmlBuilder builder)
@@ -318,6 +335,8 @@ namespace ShogiWebsite
         {
             StringBuilder builder = new();
             FillBuilder(builder);
+            properties.Clear();
+            children.Clear();
             return builder.ToString();
         }
 
@@ -350,6 +369,8 @@ namespace ShogiWebsite
 
         private void AddPairedTag(StringBuilder builder)
         {
+            if (!(children.Any() || properties.Any()))
+                return;
             bool newLine = tagType == (tagType & TagType.NewLine);
             bool childNewLine = tagType == (tagType & TagType.ChildNewLine);
             if (newLine)
@@ -385,7 +406,7 @@ namespace ShogiWebsite
 
         private void AddProperties(StringBuilder builder)
         {
-            foreach (var property in properties)
+            foreach (KeyValuePair<string, string?> property in properties)
             {
                 if (property.Value == null)
                     builder.Append($" {property.Key}");
@@ -424,7 +445,12 @@ namespace ShogiWebsite
                 childBuilder.FillBuilder(builder);
         }
 
-        internal override HtmlBuilder Reset() => new(tag);
+        internal override HtmlBuilder Reset()
+        {
+            properties.Clear();
+            children.Clear();
+            return this;
+        }
     }
 
     internal class Color
