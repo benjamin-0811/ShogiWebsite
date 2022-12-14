@@ -2,47 +2,38 @@
 {
     internal class King : Piece
     {
-        /// <summary>King on the board</summary>
         internal King(Player player, Board board, Coordinate coordinate) : base(player, true, board, coordinate)
         { }
 
         internal King(Player player, Board board, int column, int row) : base(player, true, board, column, row)
         { }
 
-        /// <summary>null King<br/>Does not contain an actual square on the board</summary>
         internal King(Player player, Board board) : base(player, false, board) { }
 
-        internal override IEnumerable<Coordinate> FindMoves() => ListMoves(new Func<Coordinate, int, bool, Coordinate?>[] { board.N, board.NE, board.E, board.SE, board.S, board.SW, board.W, board.NW });
+        internal override IEnumerable<Coordinate> FindMoves() => ListMoves(new Func<Coordinate, int, Coordinate?>[] { board.N, board.NE, board.E, board.SE, board.S, board.SW, board.W, board.NW });
 
         internal bool WouldBeCheckAt(Coordinate at)
         {
             bool result = false;
-            // Save old state
-            Coordinate kingSquare = coordinate;
+            Coordinate kingSquare = pos;
             Piece? atPiece = board.PieceAt(at);
-            // Create new state
             board.SetPiece(this, at);
             board.SetPiece(atPiece, kingSquare);
-            // See if king would be in check
             foreach(Piece opponentPieces in player.Opponent().PlayersPieces())
             {
-                IEnumerable<Coordinate> moves = opponentPieces.FindMoves();
-                if (moves.Contains(at))
+                if (opponentPieces.FindMoves().Contains(at))
                 {
                     result = true;
                     break;
                 }
             }
-            // Return to old state
             board.SetPiece(this, kingSquare);
             board.SetPiece(atPiece, at);
-
             return result;
         }
 
-        internal bool IsCheck() => WouldBeCheckAt(coordinate);
+        internal bool IsCheck() => WouldBeCheckAt(pos);
 
-        // Only call when certain the king is check
         internal bool IsCheckmate()
         {
             bool f1 = FindMoves().Any();
@@ -58,7 +49,7 @@
 
         private IEnumerable<Piece> GetCapturers(Piece attacker)
         {
-            Coordinate square = attacker.coordinate;
+            Coordinate square = attacker.pos;
             IEnumerable<Piece> ownPieces = player.PlayersPieces();
             foreach (Piece capturer in ownPieces)
             {
@@ -68,12 +59,6 @@
             }
         }
 
-        /// <summary>
-        /// Find out if the player can prevent a checkmate
-        /// by dropping (if <paramref name="doDrop"/>) or moving a piece.
-        /// </summary>
-        /// <param name="squaresInbetween">squares between the king and the attacker</param>
-        /// <param name="doDrop"><c>true</c>: drop a piece<br/><c>false</c>: move a piece</param>
         private bool CanBlockAttacker(IEnumerable<Coordinate> squaresInbetween, bool doDrop)
         {
             bool canBlock = false;
@@ -125,10 +110,10 @@
 
         private IEnumerable<Coordinate> SquaresBetweenKingAndBishop(Piece piece)
         {
-            int x1 = coordinate.Column;
-            int y1 = coordinate.Row;
-            int x2 = piece.coordinate.Column;
-            int y2 = piece.coordinate.Row;
+            int x1 = pos.Column;
+            int y1 = pos.Row;
+            int x2 = piece.pos.Column;
+            int y2 = piece.pos.Row;
             int dx = Math.Abs(x1 - x2);
             int dy = Math.Abs(y1 - y2);
             if (dx <= 1 && dy <= 1)
@@ -146,10 +131,10 @@
 
         private IEnumerable<Coordinate> SquaresBetweenKingAndRook(Piece piece)
         {
-            int x1 = coordinate.Column;
-            int y1 = coordinate.Row;
-            int x2 = piece.coordinate.Column;
-            int y2 = piece.coordinate.Row;
+            int x1 = pos.Column;
+            int y1 = pos.Row;
+            int x2 = piece.pos.Column;
+            int y2 = piece.pos.Row;
             int dx = Math.Abs(x1 - x2);
             int dy = Math.Abs(y1 - y2);
             if (dx <= 1 && dy <= 1)
@@ -178,7 +163,7 @@
             foreach (Piece piece in potentialPieces)
             {
                 IEnumerable<Coordinate> availableSquares = piece.FindMoves();
-                if (availableSquares.Contains(coordinate))
+                if (availableSquares.Contains(pos))
                     yield return piece;
             }
         }

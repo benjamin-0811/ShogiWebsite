@@ -11,8 +11,8 @@ namespace ShogiWebsite.Shogi
         internal King king;
         internal bool isCheck;
         internal bool isCheckmate;
-        internal Dictionary<string, List<Coordinate>> moveLists;
-        internal Dictionary<string, List<Coordinate>> dropLists;
+        internal Dictionary<string, IEnumerable<Coordinate>> moveLists;
+        internal Dictionary<string, IEnumerable<Coordinate>> dropLists;
 
         internal Player(Board board, bool isPlayer1)
         {
@@ -34,13 +34,9 @@ namespace ShogiWebsite.Shogi
 
         internal string PlayerNumber() => $"Player {(isPlayer1 ? 1 : 2)}";
 
-        /// <summary>
-        /// Call after the opponent's turn, before preparing this player's move.
-        /// </summary>
         internal void AfterOpponent()
         {
             isCheck = isCheckmate = false;
-            BetterConsole.Action($"Setup {PlayerNumber()}'s turn.");
             isCheck = king.IsCheck();
             if (isCheck)
             {
@@ -54,13 +50,8 @@ namespace ShogiWebsite.Shogi
             }
         }
 
-        /// <summary>
-        /// Call before taking a turn.<br/>
-        /// Don't call if the player is checkmate
-        /// </summary>
         internal void PrepareTurn()
         {
-            BetterConsole.Action($"Prepare {PlayerNumber()}'s turn.");
             if (isCheckmate)
             {
                 board.EndGame(Opponent());
@@ -76,33 +67,29 @@ namespace ShogiWebsite.Shogi
         private void RemoveDangerousKingMoves()
         {
             List<Coordinate> newMoves = new();
-            foreach (Coordinate square in moveLists[board.CoordinateString(king.coordinate)])
+            foreach (Coordinate square in moveLists[board.CoordinateString(king.pos)])
             {
                 if (!king.DoesMoveCheckOwnKing(square))
                     newMoves.Add(square);
             }
-            moveLists[board.CoordinateString(king.coordinate)] = newMoves;
+            moveLists[board.CoordinateString(king.pos)] = newMoves.AsEnumerable();
         }
 
-        /// <summary>
-        /// Remove any move of any piece that would land the king in check.
-        /// </summary>
         private void RemoveDangerousMoves()
         {
-            BetterConsole.Action("Remove any dangerous moves this player could possibly make.");
-            Dictionary<string, List<Coordinate>> newMoves = new();
-            foreach (KeyValuePair<string, List<Coordinate>> list in moveLists)
+            Dictionary<string, IEnumerable<Coordinate>> newMoves = new();
+            foreach (KeyValuePair<string, IEnumerable<Coordinate>> list in moveLists)
             {
-                Coordinate? square = board.GetSquareByCoordinate(list.Key);
-                if (square == null)
+                Coordinate? pos = board.GetSquareByCoordinate(list.Key);
+                if (pos == null)
                     continue;
-                Piece? piece = board.PieceAt(square.Value);
+                Piece? piece = board.PieceAt(pos.Value);
                 if (piece == null)
                     continue;
-                foreach (Coordinate square1 in list.Value)
+                foreach (Coordinate move in list.Value)
                 {
-                    if (piece is King king && !king.WouldBeCheckAt(square1) || !piece.DoesMoveCheckOwnKing(square1))
-                        newMoves[list.Key].Add(square1);
+                    if (piece is King king && !king.WouldBeCheckAt(move) || !piece.DoesMoveCheckOwnKing(move))
+                        newMoves[list.Key].Append(move);
                 }
             }
             moveLists = newMoves;
@@ -118,9 +105,9 @@ namespace ShogiWebsite.Shogi
                 throw new Exception("Couldn't find opponent for this player. The opponent may not be initialized.");
         }
 
-        private Dictionary<Type, int> InitHand()
+        private static Dictionary<Type, int> InitHand()
         {
-            Dictionary<Type, int> hand = new Dictionary<Type, int>();
+            Dictionary<Type, int> hand = new();
             hand[typeof(Pawn)] = 0;
             hand[typeof(Lance)] = 0;
             hand[typeof(Knight)] = 0;
@@ -131,7 +118,7 @@ namespace ShogiWebsite.Shogi
             return hand;
         }
 
-        private KeyValuePair<Type, int> NewHandPiece(Piece piece, int newAmount) => piece switch
+        private static KeyValuePair<Type, int> NewHandPiece(Piece piece, int newAmount) => piece switch
         {
             Pawn _ => new KeyValuePair<Type, int>(typeof(Pawn), newAmount),
             Bishop _ => new KeyValuePair<Type, int>(typeof(Bishop), newAmount),
@@ -147,7 +134,7 @@ namespace ShogiWebsite.Shogi
         {
             var dict = new Dictionary<string, IEnumerable<Coordinate>>();
             foreach (var piece in PlayersPieces())
-                dict[board.CoordinateString(piece.coordinate)] = piece.FindMoves();
+                dict[board.CoordinateString(piece.pos)] = piece.FindMoves();
             return dict;
         }
 
@@ -162,22 +149,8 @@ namespace ShogiWebsite.Shogi
             return dict;
         }
 
-        /// <summary>
-        /// Change the amount of pieces of the
-        /// <paramref name="piece"/>'s kind on this player's hand.
-        /// </summary>
-        /// <param name="piece">
-        /// piece who's amount on the player's hand<br/>
-        /// should be changed (only used for its type)
-        /// </param>
-        /// <param name="change">
-        /// amount of pieces to add to (+)<br/>
-        /// or subtract from (-) the player's hand
-        /// </param>
         internal void ChangeHandPieceAmount(Piece piece, int change) => hand[piece.GetType()] += change;
 
-        /// <summary>Find the piece on this player's hand by the abbreviation <paramref name="abbr"/>.</summary>
-        /// <param name="abbr"></param>
         internal Piece PieceFromHandByAbbr(string abbr) => abbr switch
         {
             "P" => new Pawn(this, board),
@@ -190,27 +163,26 @@ namespace ShogiWebsite.Shogi
             _ => new Pawn(this, board)
         };
 
-        /// <summary>Convert the player's hand to its HTML representation.</summary>
-        internal string HtmlHand()
+        internal HtmlBuilder HtmlHand()
         {
-            string text = "<div class=\"hand\">";
+            HtmlBuilder builder = new HtmlBuilder().Class("hand");
             foreach (KeyValuePair<Type, int> handPiece in hand)
             {
                 Type piece = handPiece.Key;
                 int amount = handPiece.Value;
                 string image = Images.Get(piece);
-                text += $"<div class=\"handPiece\" style=\"background-image:url('data:image/png;base64,{image}')\"";
+                HtmlBuilder htmlHandPiece = new HtmlBuilder().Class("handPiece").Child(amount);
+                htmlHandPiece.Style($"background-image:url('data:image/png;base64,{image}')");
                 if (amount > 0 && board.IsPlayersTurn(this) && !board.isOver)
                 {
                     string abbr = Names.Abbreviation(piece);
-                    text += $" id=\"{abbr}\" onclick=\"selectMoves('{abbr}')\"";
+                    htmlHandPiece.Id(abbr).Property("onclick", $"selectMoves('{abbr}')");
                 }
-                text += $">{amount}</div>";
+                builder.Child(htmlHandPiece);
             }
-            return text + "</div>";
+            return builder;
         }
 
-        /// <summary>Find all pieces of this player on the board.</summary>
         internal IEnumerable<Piece> PlayersPieces()
         {
             for (int i = 0; i < 9; i++)
@@ -224,10 +196,6 @@ namespace ShogiWebsite.Shogi
             }
         }
 
-        /// <summary>
-        /// Find all <typeparamref name="T"/>(s) of this player on the board.
-        /// </summary>
-        /// <typeparam name="T">Type of piece to find</typeparam>
         internal IEnumerable<T> AllPiecesOfType<T>() where T : Piece
         {
             foreach (Piece piece in PlayersPieces())
@@ -237,8 +205,6 @@ namespace ShogiWebsite.Shogi
             }
         }
 
-        /// <summary>Find this player's king on the board</summary>
-        /// <exception cref="Exception"/>
         internal King PlayersKing()
         {
             foreach (Piece piece in PlayersPieces())
@@ -249,15 +215,12 @@ namespace ShogiWebsite.Shogi
             throw new Exception("No king of this player was found, even though it should have already been initialized.");
         }
 
-        /// <summary>
-        /// Convert move dictioniaries to a javascript dictionary variable.
-        /// </summary>
         internal string JavascriptMoveLists()
         {
             string text = "var squareMoveDict = {";
-            Dictionary<string, List<Coordinate>> dict = moveLists;
+            Dictionary<string, IEnumerable<Coordinate>> dict = moveLists;
             dict = dict.Concat(dropLists).ToDictionary(x => x.Key, x => x.Value);
-            foreach (KeyValuePair<string, List<Coordinate>> entry in dict)
+            foreach (KeyValuePair<string, IEnumerable<Coordinate>> entry in dict)
                 text += $"{entry.Key}: {JavascriptSquareList(entry.Value)}, ";
             int last = text.LastIndexOf(',');
             if (last >= 0)
@@ -265,9 +228,9 @@ namespace ShogiWebsite.Shogi
             return text + "};";
         }
 
-        private string JavascriptSquareList(List<Coordinate> squares)
+        private string JavascriptSquareList(IEnumerable<Coordinate> squares)
         {
-            int length = squares.Count;
+            int length = squares.Count();
             string text = "[";
             if (length <= 0)
                 return text + "]";

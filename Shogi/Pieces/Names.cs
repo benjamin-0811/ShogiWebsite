@@ -52,21 +52,9 @@
             _ => ""
         };
 
-        /// <summary>Get abbreviation</summary>
         internal static string Abbreviation(Piece? piece)
         {
-            string abbreviation = piece switch
-            {
-                Pawn _ => abbreviationPawn,
-                Bishop _ => abbreviationBishop,
-                Rook _ => abbreviationRook,
-                Lance _ => abbreviationLance,
-                Knight _ => abbreviationKnight,
-                Silver _ => abbreviationSilver,
-                Gold _ => abbreviationGold,
-                King _ => abbreviationKing,
-                _ => ""
-            };
+            string abbreviation = piece != null ? Abbreviation(piece.GetType()) : "";
             if (piece != null && piece.IsPromoted())
                 abbreviation = "+" + abbreviation;
             return abbreviation;

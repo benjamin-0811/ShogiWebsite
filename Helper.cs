@@ -3,19 +3,31 @@ using System.Text.Json;
 
 namespace ShogiWebsite
 {
+    internal struct Pair<TX, TY>
+    {
+        private TX x;
+        private TY y;
+
+        internal TX X { get  => x;  set => x = value; }
+        internal TY Y { get => y; set => y = value; }
+
+        internal Pair(TX x, TY y)
+        {
+            this.x = x;
+            this.y = y;
+        }
+
+    }
+
     internal class Helper
     {
-        internal static string RepeatString(string sequence, int amount) => new StringBuilder().Insert(0, sequence, amount).ToString();
-
-        internal static void AddRepeatChar(StringBuilder builder, char character, int amount)
+        internal static void RepeatChar(StringBuilder builder, char character, int amount)
         {
             for (int i = 0; i < amount; i++)
                 builder.Append(character);
         }
 
-        internal static string Indent(int amount, string message = "") => new StringBuilder(RepeatString("\t", amount)).Append(message).ToString();
-
-        internal static void AddIndent(StringBuilder builder, int amount) => AddRepeatChar(builder, '\t', amount);
+        internal static void Indent(StringBuilder builder, int amount) => RepeatChar(builder, '\t', amount);
 
         internal static bool LastIsNewLine(StringBuilder builder) => builder.Length > 0 && builder[^1] == '\n';
     }
@@ -78,7 +90,6 @@ namespace ShogiWebsite
         internal abstract AbstractBuilder<T> Reset();
     }
 
-    /// <summary>easier way to dynamically write css styles</summary>
     internal class CssBuilder : AbstractBuilder<string>
     {
         private readonly List<string> selectors;
@@ -129,7 +140,7 @@ namespace ShogiWebsite
             int length = selectors.Count;
             if (length <= 0)
                 return;
-            Helper.AddIndent(builder, indentTabs);
+            Helper.Indent(builder, indentTabs);
             for (int i = 0; i < length - 1; i++)
                 builder.Append($"{selectors[i]}, ");
             builder.Append(selectors[length - 1]);
@@ -137,7 +148,7 @@ namespace ShogiWebsite
 
         private void AddStyle(StringBuilder builder, KeyValuePair<string, string> style)
         {
-            Helper.AddIndent(builder, indentTabs + 1);
+            Helper.Indent(builder, indentTabs + 1);
             builder.AppendLine($"{style.Key}: {style.Value};");
         }
 
@@ -153,7 +164,7 @@ namespace ShogiWebsite
             builder.Append('\n');
             foreach (KeyValuePair<string, string> style in styles)
                 AddStyle(builder, style);
-            Helper.AddIndent(builder, indentTabs);
+            Helper.Indent(builder, indentTabs);
             builder.AppendLine("}");
         }
 
@@ -165,29 +176,28 @@ namespace ShogiWebsite
         }
     }
 
-    /// <summary>easier way to dynamically write a text on multiple lines</summary>
     internal class LinesBuilder : AbstractBuilder<string>
     {
         // lines with additional amount of 4-space tabs
-        private readonly List<KeyValuePair<string, int>> lines;
+        private readonly List<Pair<string, int>> lines;
         // amount of double spaces as ground space
         private readonly int indentTabs;
 
         internal LinesBuilder(int indentTabs = 1)
         {
-            lines = new List<KeyValuePair<string, int>>();
+            lines = new List<Pair<string, int>>();
             this.indentTabs = indentTabs;
         }
 
         internal LinesBuilder Line(string line, int additionalIndent = 0)
         {
-            lines.Add(new KeyValuePair<string, int>(line, additionalIndent));
+            lines.Add(new Pair<string, int>(line, additionalIndent));
             return this;
         }
 
         internal LinesBuilder EmptyLine()
         {
-            lines.Add(new KeyValuePair<string, int>("", 0));
+            lines.Add(new Pair<string, int>("", 0));
             return this;
         }
 
@@ -216,9 +226,9 @@ namespace ShogiWebsite
         {
             if (index >= lines.Count)
                 return;
-            KeyValuePair<string, int> line = lines[index];
-            Helper.AddIndent(builder, indentTabs + line.Value);
-            builder.AppendLine(line.Key);
+            Pair<string, int> line = lines[index];
+            Helper.Indent(builder, indentTabs + line.Y);
+            builder.AppendLine(line.X);
         }
 
         internal override LinesBuilder Reset()
@@ -330,7 +340,6 @@ namespace ShogiWebsite
             return this;
         }
 
-        // Use StringBuilder from Parent
         internal override string Build()
         {
             StringBuilder builder = new();
@@ -401,7 +410,7 @@ namespace ShogiWebsite
         {
             if (!Helper.LastIsNewLine(builder))
                 builder.Append('\n');
-            Helper.AddIndent(builder, depth);
+            Helper.Indent(builder, depth);
         }
 
         private void AddProperties(StringBuilder builder)
@@ -435,9 +444,9 @@ namespace ShogiWebsite
                 if (Helper.LastIsNewLine(builder))
                 {
                     if (tagType == TagType.Block)
-                        Helper.AddIndent(builder, depth + 1);
+                        Helper.Indent(builder, depth + 1);
                     else if (tagType == TagType.BlockNoIndent)
-                        Helper.AddIndent(builder, depth);
+                        Helper.Indent(builder, depth);
                 }
                 builder.Append(child);
             }

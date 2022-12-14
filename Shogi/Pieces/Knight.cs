@@ -2,14 +2,12 @@
 {
     internal class Knight : Piece
     {
-        /// <summary>Knight on the board</summary>
         internal Knight(Player player, Board board, Coordinate coordinate) : base(player, true, board, coordinate)
         { }
 
         internal Knight(Player player, Board board, int column, int row) : base(player, true, board, column, row)
         { }
 
-        /// <summary>Knight on hand<br/>Does not contain an actual square on the board</summary>
         internal Knight(Player player, Board board) : base(player, true, board)
         { }
 
