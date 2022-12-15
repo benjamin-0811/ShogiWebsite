@@ -130,8 +130,8 @@ namespace ShogiWebsite
             AddSelectors(builder);
             builder.Append(' ');
             AddStyles(builder);
-            selectors.Clear();
-            styles.Clear();
+            // selectors.Clear();
+            // styles.Clear();
             return builder.ToString();
         }
 
@@ -218,7 +218,7 @@ namespace ShogiWebsite
             StringBuilder builder = new();
             for (int i = 0; i < length; i++)
                 AddLine(builder, i);
-            lines.Clear();
+            // lines.Clear();
             return builder.ToString();
         }
 
@@ -342,10 +342,10 @@ namespace ShogiWebsite
 
         internal override string Build()
         {
-            StringBuilder builder = new();
+            StringBuilder builder = new("<!DOCTYPE html>");
             FillBuilder(builder);
             properties.Clear();
-            children.Clear();
+            // children.Clear();
             return builder.ToString();
         }
 
@@ -451,7 +451,10 @@ namespace ShogiWebsite
                 builder.Append(child);
             }
             else if (child is HtmlBuilder childBuilder)
+            {
+                childBuilder.depth = depth + 1;
                 childBuilder.FillBuilder(builder);
+            }
         }
 
         internal override HtmlBuilder Reset()

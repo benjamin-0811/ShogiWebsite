@@ -80,7 +80,7 @@ namespace ShogiWebsite.Shogi
             Dictionary<string, IEnumerable<Coordinate>> newMoves = new();
             foreach (KeyValuePair<string, IEnumerable<Coordinate>> list in moveLists)
             {
-                Coordinate? pos = board.GetSquareByCoordinate(list.Key);
+                Coordinate? pos = board.CoordByString(list.Key);
                 if (pos == null)
                     continue;
                 Piece? piece = board.PieceAt(pos.Value);
@@ -144,7 +144,11 @@ namespace ShogiWebsite.Shogi
             foreach (var piece in hand)
             {
                 if (piece.Value > 0)
-                    dict[Names.Abbreviation(piece.Key)] = piece.Key.FindDrops();
+                {
+                    Piece? tempPiece = (Piece?)Activator.CreateInstance(piece.Key, new object[] { this, board });
+                    if (tempPiece != null)
+                        dict[Names.Abbreviation(piece.Key)] = tempPiece.FindDrops();
+                }
             }
             return dict;
         }
@@ -170,9 +174,9 @@ namespace ShogiWebsite.Shogi
             {
                 Type piece = handPiece.Key;
                 int amount = handPiece.Value;
-                string image = Images.Get(piece);
+                // string image = Images.Get(piece);
                 HtmlBuilder htmlHandPiece = new HtmlBuilder().Class("handPiece").Child(amount);
-                htmlHandPiece.Style($"background-image:url('data:image/png;base64,{image}')");
+                htmlHandPiece.Style($"background-image:url('{Images.GetUrl(piece)}')");
                 if (amount > 0 && board.IsPlayersTurn(this) && !board.isOver)
                 {
                     string abbr = Names.Abbreviation(piece);
@@ -230,6 +234,8 @@ namespace ShogiWebsite.Shogi
 
         private string JavascriptSquareList(IEnumerable<Coordinate> squares)
         {
+            return "[]";
+            /*
             int length = squares.Count();
             string text = "[";
             if (length <= 0)
@@ -238,6 +244,7 @@ namespace ShogiWebsite.Shogi
             for (int i = 1; i < length; i++)
                 text += $", \"{board.CoordinateString(squares[i])}\"";
             return text + "]";
+            */
         }
     }
 }

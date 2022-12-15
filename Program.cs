@@ -2,6 +2,7 @@
 using System.Net.Sockets;
 using System.Text;
 using ShogiWebsite.Shogi;
+using ShogiWebsite.Shogi.Pieces;
 
 
 namespace ShogiWebsite
@@ -11,18 +12,13 @@ namespace ShogiWebsite
         internal static readonly string? projectDir = GetProjectDir();
         internal static string action = "";
         private static Board board = new();
-        private static readonly string defaultStyles = DefaultStyles();
-        private static readonly string functions = Functions();
         private static readonly HtmlBuilder title = new HtmlBuilder("title").Child("Shogi");
         private static bool run = true;
 
         public static void Main()
         {
-            // HTTP Server
             HttpListener httpListener = new();
-            httpListener.Prefixes.Add("http:localhost:8001/");
-            // TcpListener listener = new(80);
-            // listener.Start();
+            httpListener.Prefixes.Add("http://localhost:8001/");
             httpListener.Start();
             Console.WriteLine("Listening on Port 8001...");
             while (run)
@@ -33,14 +29,44 @@ namespace ShogiWebsite
                 HttpListenerResponse response = context.Response;
                 response.StatusCode = (int)HttpStatusCode.OK;
                 response.StatusDescription = "Status OK";
-                Action(GetAction(request.RawUrl));
+                string post = new StreamReader(request.InputStream, request.ContentEncoding).ReadToEnd();
+                Console.WriteLine($"POST:\t{post}");
+                string url = request.RawUrl ?? "";
+                byte[] buffer = GetResponseForUrl(url);
+                Action(GetAction(post));
                 board.PlayerTurn();
-                byte[] buffer = AnswerHTML();
                 response.ContentLength64 = buffer.Length;
-                response.OutputStream.Write(AnswerHTML());
+                response.OutputStream.Write(buffer);
                 response.OutputStream.Close();
             }
             httpListener.Close();
+        }
+
+        internal static byte[] GetResponseForUrl(string url)
+        {
+            string ext = Path.GetExtension(url);
+            Console.WriteLine($"URL:\t{url}");
+            if (ext == ".png" || ext == ".ico")
+                return Images.GetBytes(url);
+            else if (ext == "")
+                return AnswerHTML();
+            else if (ext == ".css")
+                return GetStyleSheet(url);
+            else if (ext == ".js")
+                return GetJavaScript(url);
+            return Array.Empty<byte>();
+        }
+
+        internal static byte[] GetStyleSheet(string url)
+        {
+            string stylesheet = File.ReadAllText(projectDir + @"\assets\css\" + url);
+            return Encoding.UTF8.GetBytes(stylesheet);
+        }
+
+        internal static byte[] GetJavaScript(string url)
+        {
+            string stylesheet = File.ReadAllText(projectDir + @"\assets\js\" + url);
+            return Encoding.UTF8.GetBytes(stylesheet);
         }
 
         internal static string? GetProjectDir()
@@ -78,106 +104,22 @@ namespace ShogiWebsite
             return "";
         }
 
-        private static string Functions()
-        {
-            string location = projectDir + @"\assets\js\functions.js";
-            return File.ReadAllText(location);
-        }
-
-        private static string DefaultStyles()
-        {
-            // Explicit Variables, only make changes here
-            int squareWidth = 64,
-                borderWidth = 2,
-                boardSize = 9,
-                handSize = 7,
-                fontSize = 32,
-                marginWidth = 0,
-                handPieceAmountIndent = 5,
-                handPieceAmountOutlineWidth = 2,
-                handPieceAmountWeight = 600;
-            Color backgroundColor = new(169, 204, 247),
-                handColor = new(143, 175, 239),
-                squareColor = new(191, 191, 191),
-                squareBorderColor = new(47, 47, 47),
-                handPieceAmountColor = new(199, 255, 239);
-            string handPieceAmountFont = "Arial";
-            // Implicit Variables based on the Expicit ones mentioned above
-            int rowWidth = boardSize * (squareWidth + borderWidth * 2),
-                handWidth = squareWidth * handSize;
-            string squareWidthS = $"{squareWidth}px",
-                rowWidthS = $"{rowWidth}px",
-                handColorS = handColor.RgbHex(),
-                squareColorS = squareColor.RgbHex(),
-                squareBorderColorS = squareBorderColor.RgbHex(),
-                margin = marginWidth.ToString() + " auto",
-                squareBorder = $"{borderWidth}px" + " solid " + squareBorderColorS;
-
-            string location = projectDir + @"\assets\css\shogi.css";
-            StringBuilder builder1 = new(File.ReadAllText(location));
-            builder1.Replace("$bgc", backgroundColor.RgbHex());
-            builder1.Replace("$rw", rowWidthS)
-                .Replace("$rw", margin);
-            builder1.Replace("$hw", $"{handWidth}px")
-                .Replace("$hh", squareWidthS)
-                .Replace("$hbgc", handColorS)
-                .Replace("$hb", squareBorder)
-                .Replace("$hm", margin);
-            builder1.Replace("$hpw", squareWidthS)
-                .Replace("$hph", squareWidthS)
-                .Replace("$hpm", margin)
-                .Replace("$hpfs", $"{fontSize}px")
-                .Replace("$hpfc", handPieceAmountColor.RgbHex())
-                .Replace("$hpff", handPieceAmountFont)
-                .Replace("$hpfw", handPieceAmountWeight.ToString())
-                .Replace("$hpow", $"{handPieceAmountOutlineWidth}px")
-                .Replace("$hpoc", squareBorderColorS)
-                .Replace("$hpi", $"{handPieceAmountIndent}px");
-            builder1.Replace("$bw", rowWidthS)
-                .Replace("$bh", rowWidthS)
-                .Replace("$bbgc", squareColorS)
-                .Replace("$bb", squareBorder)
-                .Replace("$bm", margin);
-            builder1.Replace("$pw", squareWidthS);
-            builder1.Replace("$sbgc", squareColorS)
-                .Replace("$sb", squareBorder)
-                .Replace("$sh", squareWidthS)
-                .Replace("$sw", squareWidthS);
-            builder1.Replace("$lw", "190px")
-                .Replace("$lh", "666px")
-                .Replace("$lb", squareBorder)
-                .Replace("$lbgc", "#ffffff")
-                .Replace("$lff", handPieceAmountFont)
-                .Replace("$lp", "5px");
-            builder1.Replace("$lsbw", "10px");
-            builder1.Replace("$lsbtrbgc", squareColorS);
-            builder1.Replace("$lsbthbgc", handColorS);
-            builder1.Replace("$lsbthhbgc", "#7fffbf");
-            builder1.Replace("$buw", "200px")
-                .Replace("$buh", "32px")
-                .Replace("$bub", squareBorder)
-                .Replace("$bubgc", "#ffffff")
-                .Replace("$buff", handPieceAmountFont)
-                .Replace("$bufw", "600")
-                .Replace("$bufs", "24px");
-            builder1.Replace("$buhbgc", "#7fffbf");
-            return builder1.ToString();
-        }
-
         private static HtmlBuilder HtmlHead()
         {
             HtmlBuilder head = new("head");
-            HtmlBuilder meta = new("meta");
-            meta.Property("content", "text/html; charset=ISO-8859-1").Property("http-equiv", "content-type");
-            head.Child(meta);
-            head.Child(new HtmlBuilder("style").Child(defaultStyles));
+            head.Child(new HtmlBuilder("meta").Property("content", "text/html; charset=ISO-8859-1").Property("http-equiv", "content-type"));
+            head.Child(new HtmlBuilder("meta").Property("name", "viewport").Property("content", "width=device-width").Property("initial-scale", "1"));
+            head.Child(new HtmlBuilder("link").Property("rel", "stylesheet").Property("href", "structure.css"));
+            head.Child(new HtmlBuilder("link").Property("rel", "stylesheet").Property("href", "main-color_blue.css"));
+            head.Child(new HtmlBuilder("link").Property("rel", "stylesheet").Property("href", "contrast-color_blue.css"));
+            head.Child(new HtmlBuilder("script").Property("src", "functions.js"));
+            // head.Child(new HtmlBuilder("style").Child(defaultStyles));
             HtmlBuilder script = new("script");
             script.Child("sessionStorage.clear();");
             script.Child(board.PromotionZone());
             script.Child(board.ForcePawnLancePromotion());
             script.Child(board.ForceKnightPromotion());
             script.Child(board.JavascriptMoveLists());
-            script.Child(functions);
             return head.Child(script).Child(new HtmlBuilder("title").Child("Shogi"));
         }
 
@@ -188,7 +130,7 @@ namespace ShogiWebsite
             box.Style("background-color:#ffffff;border:2px solid #000000;width:600px;heigth:300px;");
             box.Child(new HtmlBuilder("p").Child("Promote?"));
             box.Child(new HtmlBuilder().Id("do-promote").Class("button").Child("Yes"));
-            box.Child(new HtmlBuilder().Id("do-promote").Class("button").Child("No"));
+            box.Child(new HtmlBuilder().Id("dont-promote").Class("button").Child("No"));
             return overlay.Child(box);
         }
 
@@ -230,14 +172,13 @@ namespace ShogiWebsite
 
         private static byte[] AnswerHTML()
         {
-            HtmlBuilder builder = new HtmlBuilder("!DOCTYPE").Property("html");
             HtmlBuilder html = new("html");
             html.Child(HtmlHead());
             HtmlBuilder body = new("body");
             body.Child(HtmlMain());
             body.Child(HtmlHiddenForm());
             html.Child(body);
-            string text = builder.Build();
+            string text = html.Build();
             return Encoding.UTF8.GetBytes(text);
         }
 

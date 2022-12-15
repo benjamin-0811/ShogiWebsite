@@ -1,4 +1,5 @@
 ﻿using ShogiWebsite.Shogi.Pieces;
+using System.Text;
 
 namespace ShogiWebsite.Shogi
 {
@@ -98,13 +99,19 @@ namespace ShogiWebsite.Shogi
             SelectTarget
         }
 
-        internal Piece? GetPieceByCoordinateString(string pos)
+        internal Coordinate? CoordByString(string pos)
         {
             if (pos.Length != 2)
                 return null;
             int row = Array.IndexOf(rows, pos[0]);
             int column = Array.IndexOf(columns, pos[1]);
-            return PieceAt(column, row);
+            return new Coordinate(column, row);
+        }
+
+        internal Piece? PieceByCoordString(string pos)
+        {
+            Coordinate? coord = CoordByString(pos);
+            return coord == null ? null : PieceAt(coord.Value);
         }
 
         internal Coordinate? Direction(Func<int, int, int, Coordinate?> function, Coordinate pos, int distance = 1)
@@ -255,18 +262,18 @@ namespace ShogiWebsite.Shogi
             player.PrepareTurn();
         }
 
-        internal string PromotionZone() => $"var promotionZone = {(isPlayer1Turn ? "['a', 'b', 'c']" : "['g', 'h', 'i']")}";
+        internal string PromotionZone() => $"var promotionZone = {(isPlayer1Turn ? "['a', 'b', 'c']" : "['g', 'h', 'i']")};";
 
-        internal string ForcePawnLancePromotion() => $"var pawnLancePromo = {(isPlayer1Turn ? "'a'" : "'i'")}";
+        internal string ForcePawnLancePromotion() => $"var pawnLancePromo = {(isPlayer1Turn ? "'a'" : "'i'")};";
 
-        internal string ForceKnightPromotion() => $"var knightPromo = {(isPlayer1Turn ? "['a', 'b']" : "['h', 'i']")}";
+        internal string ForceKnightPromotion() => $"var knightPromo = {(isPlayer1Turn ? "['a', 'b']" : "['h', 'i']")};";
 
         internal HtmlBuilder GameEndHtml()
         {
             HtmlBuilder builder = new();
             if (!isOver)
                 return builder;
-            HtmlBuilder button = new HtmlBuilder().Class("button").Property("onclick", "restart").Child("New Game");
+            HtmlBuilder button = new HtmlBuilder().Class("button").Property("onclick", "restart()").Child("New Game");
             HtmlBuilder message = new HtmlBuilder("p").Child($"The Winner is: Player {(winner == player1 ? "1" : "2")!}");
             HtmlBuilder box = new HtmlBuilder().Class("overlay-box").Child(button).Child(message);
             return builder.Id("game-end-overlay").Child(box);
@@ -275,21 +282,23 @@ namespace ShogiWebsite.Shogi
         internal HtmlBuilder SquareHtml(Coordinate pos)
         {
             string posString = CoordinateString(pos);
-            HtmlBuilder builder = new HtmlBuilder().Id(posString).Class("square");
+            StringBuilder squareClass = new("square");
+            HtmlBuilder builder = new HtmlBuilder().Id(posString);
             Piece? piece = PieceAt(pos);
             if (piece != null && IsPlayersTurn(piece.player) && !isOver)
             {
                 if (piece.canPromote && !piece.IsPromoted())
                 {
+                    squareClass.Append(" promotable");
                     builder.Class("promotable");
                     if (piece is Pawn or Lance)
-                        builder.Class("forcePromo1");
+                        squareClass.Append(" forcePromo1");
                     else if (piece is Knight)
-                        builder.Class("forcePromo2");
+                        squareClass.Append(" forcePromo2");
                 }
                 builder.Property("onclick", posString);
             }
-            return builder.Child(HtmlPieceImage(piece));
+            return builder.Class(squareClass.ToString()).Child(HtmlPieceImage(piece));
         }
 
         private static HtmlBuilder HtmlPieceImage(Piece? piece)
@@ -297,7 +306,8 @@ namespace ShogiWebsite.Shogi
             HtmlBuilder builder = new("img");
             if (piece != null)
                 builder.Class($"{(piece.player.isPlayer1 ? "black" : "white")}-piece");
-            builder.Property("src", $"data:image/png;base64,{Images.Get(piece)}");
+            // builder.Property("src", $"data:image/png;base64,{Images.Get(piece)}");
+            builder.Property("src", Images.GetUrl(piece));
             builder.Property("alt", Names.Get(piece));
             return builder;
         }

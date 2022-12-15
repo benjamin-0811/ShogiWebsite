@@ -1,0 +1,45 @@
+body {
+    background-color: #1f1f3f;
+}
+
+.hand {
+	background-color: #7f7fef;
+	border-color: black;
+}
+
+.board {
+	background-color: #bfbff7;
+	border-color: black;
+}
+
+.square {
+	background-image: radial-gradient(#bfbff7 50%, #00000000);
+	border-color: black;
+}
+
+@keyframes squarePulse {
+	from {background-color: #7f7fef;}
+	to {background-color: #bfbff7;}
+}
+
+.log {
+	border-color: black;
+	background-color: #bfbfef;
+}
+
+.log::-webkit-scrollbar-track {
+	background-color: #bfbfef;
+}
+
+.log::-webkit-scrollbar-thumb {
+	background-color: #7f7fef;
+}
+
+.button {
+	border-color: black;
+	background-color: #7f7fef;
+}
+
+#ask-promotion-overlay, #game-end-overlay {
+	background-color: #0000007f;
+}

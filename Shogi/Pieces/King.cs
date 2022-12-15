@@ -62,23 +62,19 @@
         private bool CanBlockAttacker(IEnumerable<Coordinate> squaresInbetween, bool doDrop)
         {
             bool canBlock = false;
-            Dictionary<string, List<Coordinate>> lists = doDrop ? player.dropLists : player.moveLists;
-            var protect = doDrop ? protectDrops : protectMoves;
+            Dictionary<string, IEnumerable<Coordinate>> lists = doDrop ? player.GetDropLists() : player.GetMoveLists();
+            var protect = new Dictionary<string, IEnumerable<Coordinate>>();
             int length = squaresInbetween.Count();
-            foreach (KeyValuePair<string, List<Coordinate>> list in lists)
+            foreach (KeyValuePair<string, IEnumerable<Coordinate>> list in lists)
             {
-                List<Coordinate> squares = list.Value;
+                IEnumerable<Coordinate> squares = list.Value;
                 for (int i = 0; i < length; i++)
                 {
                     Coordinate square = squaresInbetween.ElementAt(i);
-                    Coordinate? orig = board.GetSquareByCoordinate(list.Key);
-                    if (orig != null && board.PieceAt(orig.Value) == this && !DoesMoveCheckOwnKing(square) || squares.Contains(square))
+                    if (board.PieceByCoordString(list.Key) == this && !DoesMoveCheckOwnKing(square) || squares.Contains(square))
                     {
                         string coord = list.Key;
-                        if (protect.ContainsKey(coord))
-                            protect[coord].Add(square);
-                        else
-                            protect.Add(coord, new List<Coordinate>() { square });
+                        protect[list.Key] = protect[list.Key].Append(square);
                         canBlock = true;
                     }
                 }
@@ -88,7 +84,7 @@
 
         private Dictionary<Piece, IEnumerator<Coordinate>> BlockAttackerMoves(Piece attacker)
         {
-
+            throw new NotImplementedException();
         }
 
         private bool CanBlockAttacker(Piece piece)
