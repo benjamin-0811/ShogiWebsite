@@ -109,9 +109,9 @@ namespace ShogiWebsite
             HtmlBuilder head = new("head");
             head.Child(new HtmlBuilder("meta").Property("content", "text/html; charset=ISO-8859-1").Property("http-equiv", "content-type"));
             head.Child(new HtmlBuilder("meta").Property("name", "viewport").Property("content", "width=device-width").Property("initial-scale", "1"));
-            head.Child(new HtmlBuilder("link").Property("rel", "stylesheet").Property("href", "structure.css"));
-            head.Child(new HtmlBuilder("link").Property("rel", "stylesheet").Property("href", "main-color_blue.css"));
-            head.Child(new HtmlBuilder("link").Property("rel", "stylesheet").Property("href", "contrast-color_blue.css"));
+            head.Child(new HtmlBuilder("link").Property("rel", "stylesheet").Property("href", "m_gray.css"));
+            head.Child(new HtmlBuilder("link").Property("rel", "stylesheet").Property("href", "c_silver.css"));
+            head.Child(new HtmlBuilder("link").Property("rel", "stylesheet").Property("href", "main.css"));
             head.Child(new HtmlBuilder("script").Property("src", "functions.js"));
             // head.Child(new HtmlBuilder("style").Child(defaultStyles));
             HtmlBuilder script = new("script");

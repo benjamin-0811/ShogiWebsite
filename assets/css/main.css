@@ -1,3 +1,7 @@
+body {
+    background-color: var(--main_1);
+}
+
 .row {
 	width: 612px;
 	min-width: 612px;
@@ -12,6 +16,8 @@
 	height: 64px;
 	min-height: 64px;
 	max-height: 64px;
+	background-color: var(--main_2);
+	border-color: black;
 	border-style: solid;
 	border-width: 2px;
 	/* border-color: rgb(47, 47, 47); */
@@ -19,6 +25,7 @@
 }
 
 .handPiece {
+	color: var(--contrast_2);
 	width: 64px;
 	min-width: 64px;
 	max-width: 64px;
@@ -32,6 +39,7 @@
 	font-family: Arial;
 	font-weight: 600;
 	-webkit-text-stroke-width: 2px;
+	-webkit-text-stroke-color: black;
 	text-indent: 5px;
 }
 
@@ -42,6 +50,8 @@
 	height: 612px;
 	min-height: 612px;
 	max-height: 612px;
+	background-color: var(--main_3);
+	border-color: black;
 	border-style: solid;
 	border-width: 2px;
 	/* border-color: rgb(47, 47, 47); */
@@ -58,9 +68,10 @@
 }
 
 .square, .highlightedSquare {
+	background-image: radial-gradient(var(--main_3) 50%, #00000000);
+	border-color: black;
 	border-style: solid;
 	border-width: 2px;
-	/* border-color: rgb(47, 47, 47); */
 	height: 64px;
 	width: 64px;
 	float: left;
@@ -76,8 +87,19 @@
 }
 
 .highlightedSquare {
+	background-image: radial-gradient(var(--contrast_2) 20%, #00000000);
 	animation-name: highlightedPulse;
 	animation-duration: 0.5s;
+}
+
+@keyframes squarePulse {
+	from {background-color: var(--main_4);}
+	to {background-color: var(--main_3);}
+}
+
+@keyframes highlightedPulse {
+	from {background-color: var(--contrast_1);}
+	to {background-color: var(--contrast_2);}
 }
 
 .log {
@@ -85,6 +107,8 @@
 	height: 666px;
 	overflow: scroll;
 	overflow-x: hidden;
+	border-color: black;
+	background-color: var(--main_4);
 	border-style: solid;
 	border-width: 2px;
 	/* border-color: rgb(47, 47, 47); */
@@ -96,13 +120,28 @@
 	width: 10px;
 }
 
+.log::-webkit-scrollbar-track {
+	background-color: var(--main_3);
+}
+
 .log::-webkit-scrollbar-thumb {
-	transition: background-color .2s;
+	background-color: var(--main_2);
+}
+
+.log::-webkit-scrollbar-thumb:hover {
+	background-color: var(--contrast_2);
+}
+
+.log p {
+	margin-top: 4px;
+	margin-bottom: 4px;
 }
 
 .button {
 	width: 200px;
 	height: 32px;
+	border-color: black;
+	background-color: var(--main_2);
 	border-style: solid;
 	border-width: 2px;
 	/* border-color: rgb(47, 47, 47); */
@@ -114,6 +153,10 @@
 	transition: background-color .2s;
 }
 
+.button:hover {
+	background-color: var(--contrast_1);
+}
+
 #ask-promotion-overlay, #game-end-overlay {
 	position: fixed;
 	width: 100%;
@@ -123,6 +166,7 @@
 	right: 0;
 	bottom: 0;
 	z-index: 2;
+	background-color: #0000007f;
 }
 
 #ask-promotion-overlay {
