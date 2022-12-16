@@ -202,6 +202,23 @@ namespace ShogiWebsite
             return piece != null && board.IsPlayersTurn(piece.player) && piece.Move(new Coordinate(c2, r2), promote);
         }
 
+        private static bool ChooseSquareOrMove(string actionCode)
+        {
+            // scenario 1 : chose first piece, highlight squares this piece can move to
+            // scenario 2 : chose unhighlighted square, deselect all squares
+            // scenario 3 : chose highlighted, move piece
+            Coordinate? coord = board.CoordByString(actionCode);
+            if (coord == null)
+                return false;
+            if (board.phase == Board.Phase.ChoosePiece)
+            {
+                Piece? piece = board.PieceAt(coord.Value);
+                board.phase = Board.Phase.SelectTarget;
+                return piece != null && board.IsPlayersTurn(piece.player) && piece.
+            }
+            return true;
+        }
+
         private static bool Drop(Player player, string actionCode)
         {
             string abbr = $"{actionCode[0]}";
@@ -221,10 +238,14 @@ namespace ShogiWebsite
                 Restart(player);
             else if (actionCode == "stop")
                 run = false;
+            else if (actionCode.Length == 2)
+                switchPlayer = ChooseSquareOrMove(actionCode);
+            /*
             else if (actionCode.Length == 5 || actionCode.Length == 6)
                 switchPlayer = Move(actionCode);
             else if (actionCode.Length == 4)
                 switchPlayer = Drop(player, actionCode);
+            */
             if (switchPlayer)
                 board.isPlayer1Turn = !board.isPlayer1Turn;
         }

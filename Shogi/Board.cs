@@ -282,7 +282,9 @@ namespace ShogiWebsite.Shogi
         internal HtmlBuilder SquareHtml(Coordinate pos)
         {
             string posString = CoordinateString(pos);
-            StringBuilder squareClass = new("square");
+            StringBuilder squareClass = new();
+            // "square"
+
             HtmlBuilder builder = new HtmlBuilder().Id(posString);
             Piece? piece = PieceAt(pos);
             if (piece != null && IsPlayersTurn(piece.player) && !isOver)
@@ -296,7 +298,7 @@ namespace ShogiWebsite.Shogi
                     else if (piece is Knight)
                         squareClass.Append(" forcePromo2");
                 }
-                builder.Property("onclick", posString);
+                builder.Property("onclick", $"submitForm('{posString}');");
             }
             return builder.Class(squareClass.ToString()).Child(HtmlPieceImage(piece));
         }
