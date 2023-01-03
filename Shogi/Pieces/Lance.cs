@@ -1,22 +1,27 @@
-﻿namespace ShogiWebsite.Shogi.Pieces
+﻿namespace ShogiWebsite.Shogi.Pieces;
+
+internal class Lance : Piece
 {
-    internal class Lance : Piece
+    internal Lance(Player player, Board board) : base(player, true, board)
+    { }
+
+    internal override IEnumerable<Coordinate> FindMoves()
     {
-        internal Lance(Player player, Board board, Coordinate coordinate) : base(player, true, board, coordinate)
-        { }
+        return this.isPromoted ? this.GoldMoves() : this.LanceMoves();
+    }
 
-        internal Lance(Player player, Board board, int column, int row) : base(player, true, board, column, row)
-        { }
+    private IEnumerable<Coordinate> LanceMoves()
+    {
+        return this.RangeMoves(new Func<Coordinate, int, Coordinate?>[] { this.Front() });
+    }
 
-        internal Lance(Player player, Board board) : base(player, true, board)
-        { }
+    internal override IEnumerable<Coordinate> FindDrops()
+    {
+        return this.FindDrops(1);
+    }
 
-        internal override IEnumerable<Coordinate> FindMoves() => isPromoted ? GoldMoves() : LanceMoves();
-
-        private IEnumerable<Coordinate> LanceMoves() => RangeMoves(new Func<Coordinate, int, Coordinate?>[] { Front() });
-
-        internal override IEnumerable<Coordinate> FindDrops() => FindDrops(1);
-
-        internal override void ForcePromote() => ForcePromote(1);
+    internal override void ForcePromote()
+    {
+        this.ForcePromote(1);
     }
 }

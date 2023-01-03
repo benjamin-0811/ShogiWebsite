@@ -1,251 +1,283 @@
 ﻿using ShogiWebsite.Shogi.Pieces;
+using System.Text;
 
-namespace ShogiWebsite.Shogi
+namespace ShogiWebsite.Shogi;
+
+internal abstract class Piece
 {
-    internal abstract class Piece
+    internal Player player;
+    internal bool isPromoted;
+    internal readonly bool canPromote;
+    internal Board board;
+    internal Coordinate pos;
+
+    internal Piece(Player player, bool canPromote, Board board)
     {
-        internal Player player;
-        internal bool isPromoted;
-        internal readonly bool canPromote;
-        internal Board board;
-        internal Coordinate pos;
+        this.player = player;
+        this.isPromoted = false;
+        this.canPromote = canPromote;
+        this.board = board;
+        this.pos = new Coordinate(-1, -1);
+    }
 
-        internal Piece(Player player, bool canPromote, Board board, Coordinate pos)
+    internal bool Move(Coordinate to, bool doesPromote)
+    {
+        IEnumerable<Coordinate> moves = this.FindMoves();
+        if (moves != null && moves.Contains(to))
         {
-            this.player = player;
-            isPromoted = false;
-            this.canPromote = canPromote;
-            this.board = board;
-            this.pos = pos;
-        }
-
-        internal Piece(Player player, bool canPromote, Board board, int column, int row) : this(player, canPromote, board, new Coordinate(column, row))
-        { }
-
-        internal Piece(Player player, bool canPromote, Board board) : this(player, canPromote, board, -1, -1)
-        { }
-
-        internal bool Move(Coordinate to, bool doesPromote)
-        {
-            IEnumerable<Coordinate> moves = FindMoves();
-            if (moves != null && moves.Contains(to))
+            Coordinate old = this.pos;
+            Piece? piece = this.board.PieceAt(to);
+            char moveType = '-';
+            if (piece != null && this.DifferentPlayer(piece) && piece is not King)
             {
-                Coordinate old = pos;
-                Piece? piece = board.PieceAt(to);
-                char moveType = '-';
-                if (piece != null && piece.player != player)
-                {
-                    if (piece is not King)
-                    {
-                        player.ChangeHandPieceAmount(piece, 1);
-                        moveType = 'x';
-                    }
-                }
-                board.SetPiece(null, old);
-                board.SetPiece(this, to);
-                string part1 = $"{Names.Abbreviation(this)}{board.CoordinateString(old)}";
-                bool wasPromoted = isPromoted;
-                ForcePromote();
-                if (wasPromoted != isPromoted)
-                    doesPromote = true;
-                string part2 = $"{moveType}{board.CoordinateString(to)}{(doesPromote ? "+" : "")}";
-                board.Log($"{player.PlayerNumber()} : {part1}{part2}");
-                if (doesPromote)
-                    isPromoted = true;
-                return true;
+                this.player.ChangeHandPieceAmount(piece, 1);
+                moveType = 'x';
             }
+            this.board.SetPiece(null, old);
+            this.board.SetPiece(this, to);
+            string part1 = $"{Names.Abbreviation(this)}{this.board.CoordinateString(old)}";
+            bool wasPromoted = this.isPromoted;
+            this.ForcePromote();
+            if (wasPromoted != this.isPromoted)
+            {
+                doesPromote = true;
+            }
+            string part2 = $"{moveType}{this.board.CoordinateString(to)}{(doesPromote ? "+" : "")}";
+            this.board.Log($"{this.player.PlayerNumber()} : {part1}{part2}");
+            if (doesPromote)
+            {
+                this.isPromoted = true;
+            }
+            return true;
+        }
+        return false;
+    }
+
+    internal bool MoveFromHand(Coordinate to)
+    {
+        IEnumerable<Coordinate> drops = this.FindDrops();
+        bool emptyTo = this.board.PieceAt(to) == null;
+        bool canDropTo = drops != null && drops.Contains(to) && emptyTo;
+        if (canDropTo && this is not King)
+        {
+            this.player.ChangeHandPieceAmount(this, -1);
+            this.board.SetPiece(this, to);
+            StringBuilder logBuilder = new StringBuilder()
+                .Append(this.player.PlayerNumber())
+                .Append(" : ")
+                .Append(Names.Abbreviation(this))
+                .Append('*')
+                .Append(this.board.CoordinateString(to));
+            this.board.Log(logBuilder.ToString());
+            return true;
+        }
+        return false;
+    }
+
+    internal bool DoesMoveCheckOwnKing(Coordinate to)
+    {
+        bool result = false;
+        Coordinate oldCoord = this.pos;
+        Piece? oldToPiece = this.board.PieceAt(to);
+        this.board.SetPiece(this, to);
+        this.board.SetPiece(null, oldCoord);
+        if (this.player.king.IsCheck())
+        {
+            result = true;
+        }
+        this.board.SetPiece(oldToPiece, to);
+        this.board.SetPiece(this, oldCoord);
+        return result;
+    }
+
+    internal void Promote()
+    {
+        if (this.canPromote)
+        {
+            this.isPromoted = true;
+        }
+    }
+
+    // internal string IdentifyingString() => $"{player.PlayerNumber()}'s {Names.Get(this)} on {CoordinateString()}";
+
+    internal virtual void ForcePromote() { }
+
+    internal void ForcePromote(int rowAmount)
+    {
+        int row = this.pos.Row;
+        bool unPromoted = !this.isPromoted;
+        bool cannotMoveFurther = this.player.isPlayer1 ? row < rowAmount : row >= this.board.height - rowAmount;
+        if (unPromoted && cannotMoveFurther)
+        {
+            this.Promote();
+        }
+    }
+
+    internal bool IsPromoted()
+    {
+        return this.canPromote && this.isPromoted;
+    }
+
+    internal bool CanMoveTo(Coordinate pos)
+    {
+        IEnumerable<Coordinate> availableSquares = this.FindMoves();
+        return availableSquares.Contains(pos);
+    }
+
+    internal abstract IEnumerable<Coordinate> FindMoves();
+
+    internal virtual IEnumerable<Coordinate> FindDrops()
+    {
+        return this.FindDrops(0);
+    }
+
+    internal IEnumerable<Coordinate> FindDrops(int freeRows)
+    {
+        int min = this.MinDropRow(freeRows);
+        int max = this.MaxDropRow(freeRows);
+        for (int i = min; i <= max; i++)
+        {
+            for (int j = 0; j < this.board.width; j++)
+            {
+                Coordinate pos = new(i, j);
+                if (this.board.PieceAt(pos) == null)
+                {
+                    yield return pos;
+                }
+            }
+        }
+    }
+
+    internal int MinDropRow(int freeRows)
+    {
+        return this.player.isPlayer1 ? freeRows : 0;
+    }
+
+    internal int MaxDropRow(int freeRows)
+    {
+        return this.board.height - (this.player.isPlayer1 ? 0 : freeRows) - 1;
+    }
+
+    protected IEnumerable<Coordinate> GoldMoves()
+    {
+        Func<Coordinate, int, Coordinate?>[] directions = new[]
+        {
+            this.Front(), this.FrontLeft(), this.FrontRight(),
+            this.Left(), this.Right(), this.Back()
+        };
+        return this.ListMoves(directions);
+    }
+
+    protected IEnumerable<Coordinate> RangeMoves(Func<Coordinate, int, Coordinate?>[] directions)
+    {
+        foreach (Func<Coordinate, int, Coordinate?> direction in directions)
+        {
+            bool flag = true;
+            for (int i = 1; flag; i++)
+            {
+                Coordinate? temp = direction(this.pos, i);
+                flag = this.CanContinue(temp);
+                if (this.IsAvailableSquare(temp))
+                {
+                    Helper.AssertNotNull(temp);
+                    yield return temp.Value;
+                }
+            }
+        }
+    }
+
+    protected IEnumerable<Coordinate> ListMoves(Func<Coordinate, int, Coordinate?>[] directions, int distance = 1)
+    {
+        foreach (Func<Coordinate, int, Coordinate?> direction in directions)
+        {
+            Coordinate? temp = direction(this.pos, distance);
+            if (this.IsAvailableSquare(temp))
+            {
+                Helper.AssertNotNull(temp);
+                yield return temp.Value;
+            }
+        }
+    }
+
+    protected bool CanContinue(Coordinate? pos)
+    {
+        if (pos == null)
+        {
             return false;
         }
+        return this.board.PieceAt(pos.Value) == null;
+    }
 
-        internal bool MoveFromHand(Coordinate to)
+    protected bool IsAvailableSquare(Coordinate? pos)
+    {
+        if (pos == null)
         {
-            IEnumerable<Coordinate> drops = FindDrops();
-            Piece? piece = board.PieceAt(to);
-            if (drops != null && drops.Contains(to) && piece == null && this is not King)
-            {
-                player.ChangeHandPieceAmount(this, -1);
-                board.SetPiece(this, to);
-                board.Log($"{player.PlayerNumber()} : {Names.Abbreviation(this)}*{board.CoordinateString(to)}");
-                return true;
-            }
             return false;
         }
+        Piece? piece = this.board.PieceAt(pos.Value);
+        return piece == null || piece.player != this.player;
+    }
 
-        internal bool DoesMoveCheckOwnKing(Coordinate to)
-        {
-            bool result = false;
-            Coordinate oldCoord = pos;
-            Piece? oldToPiece = board.PieceAt(to);
-            board.SetPiece(this, to);
-            board.SetPiece(null, oldCoord);
-            if (player.king.IsCheck())
-                result = true;
-            board.SetPiece(oldToPiece, to);
-            board.SetPiece(this, oldCoord);
-            return result;
-        }
+    internal bool DifferentPlayer(Coordinate pos)
+    {
+        Piece? piece = this.board.PieceAt(pos);
+        return piece == null || this.DifferentPlayer(pos);
+    }
 
-        internal void Promote()
-        {
-            if (canPromote)
-               isPromoted = true;
-        }
+    internal bool DifferentPlayer(Piece piece)
+    {
+        return piece.player != this.player;
+    }
 
-        internal string IdentifyingString() => $"{player.PlayerNumber()}'s {Names.Get(this)} on {CoordinateString()}";
+    internal Func<Coordinate, int, Coordinate?> Front()
+    {
+        return this.player.isPlayer1 ? this.board.N : this.board.S;
+    }
 
-        internal virtual void ForcePromote() { }
+    internal Func<Coordinate, int, Coordinate?> Back()
+    {
+        return this.player.isPlayer1 ? this.board.S : this.board.N;
+    }
 
-        internal void ForcePromote(int rows)
-        {
-            int row = pos.Row;
-            if (!isPromoted && (player.isPlayer1 ? row < rows : row >= board.height - rows))
-                Promote();
-        }
-        internal bool IsPromoted() => canPromote && isPromoted;
+    internal Func<Coordinate, int, Coordinate?> Left()
+    {
+        return this.player.isPlayer1 ? this.board.W : this.board.E;
+    }
 
-        internal bool CanMoveTo(int column, int row) => CanMoveTo(new Coordinate(column, row));
+    internal Func<Coordinate, int, Coordinate?> Right()
+    {
+        return this.player.isPlayer1 ? this.board.E : this.board.W;
+    }
 
-        internal bool CanMoveTo(Coordinate pos)
-        {
-            IEnumerable<Coordinate> availableSquares = FindMoves();
-            return availableSquares.Contains(pos);
-        }
+    internal Func<Coordinate, int, Coordinate?> FrontLeft()
+    {
+        return this.player.isPlayer1 ? this.board.NW : this.board.SE;
+    }
 
-        internal abstract IEnumerable<Coordinate> FindMoves();
+    internal Func<Coordinate, int, Coordinate?> FrontRight()
+    {
+        return this.player.isPlayer1 ? this.board.NE : this.board.SW;
+    }
 
-        internal virtual IEnumerable<Coordinate> FindDrops() => FindDrops(0);
+    internal Func<Coordinate, int, Coordinate?> BackLeft()
+    {
+        return this.player.isPlayer1 ? this.board.SW : this.board.NE;
+    }
 
-        internal IEnumerable<Coordinate> FindDrops(int freeRows)
-        {
-            int min = MinDropRow(freeRows);
-            int max = MaxDropRow(freeRows);
-            for (int i = min; i <= max; i++)
-            {
-                for (int j = 0; j < board.width; j++)
-                {
-                    Coordinate pos = new(i, j);
-                    if (board.PieceAt(pos) == null)
-                        yield return pos;
-                }
-            }
-        }
+    internal Func<Coordinate, int, Coordinate?> BackRight()
+    {
+        return this.player.isPlayer1 ? this.board.SE : this.board.NW;
+    }
 
-        internal int MinDropRow(int freeRows) => player.isPlayer1 ? freeRows : 0;
+    internal Coordinate? Knight(bool left)
+    {
+        Coordinate? front = this.Front()(this.pos, 2);
+        Func<Coordinate, int, Coordinate?> side = left ? this.Left() : this.Right();
+        return front != null ? side(front.Value, 1) : null;
+    }
 
-        internal int MaxDropRow(int freeRows) => board.height - (player.isPlayer1 ? 0 : freeRows) - 1;
-
-        protected IEnumerable<Coordinate> GoldMoves() => ListMoves(new[] { Front(), FrontLeft(), FrontRight(), Left(), Right(), Back() });
-
-        protected IEnumerable<Coordinate> RangeMoves(Func<int, int, int, Coordinate?>[] directions)
-        {
-            foreach(Func<int, int, int, Coordinate?> direction in directions)
-            {
-                bool flag = true;
-                for (int i = 1; flag; i++)
-                {
-                    Coordinate? temp = direction(pos.Column, pos.Row, i);
-                    if (temp == null)
-                        break;
-                    flag = CanContinue(temp);
-                    if (IsAvailableSquare(temp.Value))
-                        yield return temp.Value;
-                }
-            }
-        }
-
-        protected IEnumerable<Coordinate> RangeMoves(Func<Coordinate, int, Coordinate?>[] directions)
-        {
-            foreach (Func<Coordinate, int, Coordinate?> direction in directions)
-            {
-                bool flag = true;
-                for (int i = 1; flag; i++)
-                {
-                    Coordinate? temp = direction(pos, i);
-                    if (temp == null)
-                        break;
-                    flag = CanContinue(temp);
-                    if (IsAvailableSquare(temp.Value))
-                        yield return temp.Value;
-                }
-            }
-        }
-
-        protected IEnumerable<Coordinate> ListMoves(Func<int, int, int, Coordinate?>[] directions, int distance = 1)
-        {
-            foreach (Func<int, int, int, Coordinate?> direction in directions)
-            {
-                Coordinate? pos = direction(this.pos.Column, this.pos.Row, distance);
-                if (pos != null && IsAvailableSquare(pos.Value))
-                    yield return pos.Value;
-            }
-        }
-
-        protected IEnumerable<Coordinate> ListMoves(Func<Coordinate, int, Coordinate?>[] directions, int distance = 1)
-        {
-            foreach (Func<Coordinate, int, Coordinate?> direction in directions)
-            {
-                Coordinate? pos = direction(this.pos, distance);
-                if (pos != null && IsAvailableSquare(pos.Value))
-                    yield return pos.Value;
-            }
-        }
-
-        protected bool CanContinue(Coordinate? pos)
-        {
-            if (pos == null)
-                return false;
-            return board.PieceAt(pos.Value) == null;
-        }
-
-        protected bool IsAvailableSquare(Coordinate pos)
-        {
-            Piece? piece = board.PieceAt(pos);
-            return piece == null || piece.player != player;
-        }
-
-        protected virtual Coordinate? GetSquareIfAvailable(Func<int, int, int, Coordinate?> func, int distance = 1)
-        {
-            Coordinate? pos = func(this.pos.Column, this.pos.Row, distance);
-            return pos != null && IsAvailableSquare(pos.Value) ? pos : null;
-        }
-
-        protected virtual Coordinate? GetSquareIfAvailable(Func<Coordinate, int, Coordinate?> func, int distance = 1)
-        {
-            Coordinate? pos = func(this.pos, distance);
-            return pos != null && IsAvailableSquare(pos.Value) ? pos : null;
-        }
-
-        internal bool DifferentPlayer(Coordinate pos)
-        {
-            Piece? piece = board.PieceAt(pos);
-            return piece == null || DifferentPlayer(pos);
-        }
-
-        internal bool DifferentPlayer(Piece piece) => piece.player != player;
-
-        internal Func<Coordinate, int, Coordinate?> Front() => player.isPlayer1 ? board.N : board.S;
-
-        internal Func<Coordinate, int, Coordinate?> Back() => player.isPlayer1 ? board.S : board.N;
-
-        internal Func<Coordinate, int, Coordinate?> Left() => player.isPlayer1 ? board.W : board.E;
-
-        internal Func<Coordinate, int, Coordinate?> Right() => player.isPlayer1 ? board.E : board.W;
-
-        internal Func<Coordinate, int, Coordinate?> FrontLeft() => player.isPlayer1 ? board.NW : board.SE;
-
-        internal Func<Coordinate, int, Coordinate?> FrontRight() => player.isPlayer1 ? board.NE : board.SW;
-
-        internal Func<Coordinate, int, Coordinate?> BackLeft() => player.isPlayer1 ? board.SW : board.NE;
-
-        internal Func<Coordinate, int, Coordinate?> BackRight() => player.isPlayer1 ? board.SE : board.NW;
-
-        internal Coordinate? Knight(bool left)
-        {
-            Coordinate? front = Front()(pos, 2);
-            Func<Coordinate, int, Coordinate?> side = left ? Left() : Right();
-            return front != null ? side(front.Value, 1) : null;
-        }
-
-        internal string CoordinateString() => board.CoordinateString(pos);
+    internal string CoordinateString()
+    {
+        return this.board.CoordinateString(this.pos);
     }
 }

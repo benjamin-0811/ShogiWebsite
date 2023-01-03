@@ -1,30 +1,38 @@
-﻿namespace ShogiWebsite.Shogi.Pieces
+﻿namespace ShogiWebsite.Shogi.Pieces;
+
+internal class Knight : Piece
 {
-    internal class Knight : Piece
+    internal Knight(Player player, Board board) : base(player, true, board)
+    { }
+
+    internal override IEnumerable<Coordinate> FindMoves()
     {
-        internal Knight(Player player, Board board, Coordinate coordinate) : base(player, true, board, coordinate)
-        { }
+        return this.isPromoted ? this.GoldMoves() : this.KnightMoves();
+    }
 
-        internal Knight(Player player, Board board, int column, int row) : base(player, true, board, column, row)
-        { }
-
-        internal Knight(Player player, Board board) : base(player, true, board)
-        { }
-
-        internal override IEnumerable<Coordinate> FindMoves() => isPromoted ? GoldMoves() : KnightMoves();
-
-        private IEnumerable<Coordinate> KnightMoves()
+    private IEnumerable<Coordinate> KnightMoves()
+    {
+        Coordinate? left = this.Knight(true);
+        if (this.IsAvailableSquare(left))
         {
-            Coordinate? left = Knight(true);
-            if (left != null && IsAvailableSquare(left.Value))
-                yield return left.Value;
-            Coordinate? right = Knight(false);
-            if (right != null && IsAvailableSquare(right.Value))
-                yield return right.Value;
+            Helper.AssertNotNull(left);
+            yield return left.Value;
         }
+        Coordinate? right = this.Knight(false);
+        if (this.IsAvailableSquare(right))
+        {
+            Helper.AssertNotNull(right);
+            yield return right.Value;
+        }
+    }
 
-        internal override IEnumerable<Coordinate> FindDrops() => FindDrops(2);
+    internal override IEnumerable<Coordinate> FindDrops()
+    {
+        return this.FindDrops(2);
+    }
 
-        internal override void ForcePromote() => ForcePromote(2);
+    internal override void ForcePromote()
+    {
+        this.ForcePromote(2);
     }
 }

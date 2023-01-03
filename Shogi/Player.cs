@@ -1,250 +1,277 @@
 ﻿using ShogiWebsite.Shogi.Pieces;
 
-namespace ShogiWebsite.Shogi
+namespace ShogiWebsite.Shogi;
+
+internal class Player
 {
-    internal class Player
+    internal readonly Board board;
+    internal readonly bool isPlayer1;
+    // to Dict<Type, int>
+    internal Dictionary<Type, int> hand = new();
+    internal King king;
+    internal bool isCheck;
+    internal bool isCheckmate;
+    internal Dictionary<string, IEnumerable<Coordinate>> moveLists;
+    internal Dictionary<string, IEnumerable<Coordinate>> dropLists;
+
+    internal Player(Board board, bool isPlayer1)
     {
-        internal readonly Board board;
-        internal readonly bool isPlayer1;
-        // to Dict<Type, int>
-        internal Dictionary<Type, int> hand = new();
-        internal King king;
-        internal bool isCheck;
-        internal bool isCheckmate;
-        internal Dictionary<string, IEnumerable<Coordinate>> moveLists;
-        internal Dictionary<string, IEnumerable<Coordinate>> dropLists;
+        this.board = board;
+        this.isPlayer1 = isPlayer1;
+        // hand = new();
+        this.king = new King(this, board);
+        this.isCheck = false;
+        this.isCheckmate = false;
+        this.moveLists = new();
+        this.dropLists = new();
+    }
 
-        internal Player(Board board, bool isPlayer1)
+    internal void InitLater()
+    {
+        this.hand = InitHand();
+        this.king = this.PlayersKing();
+    }
+
+    internal string PlayerNumber()
+    {
+        return $"Player {(this.isPlayer1 ? 1 : 2)}";
+    }
+
+    internal void AfterOpponent()
+    {
+        this.isCheck = this.isCheckmate = false;
+        this.isCheck = this.king.IsCheck();
+        if (this.isCheck)
         {
-            this.board = board;
-            this.isPlayer1 = isPlayer1;
-            // hand = new();
-            king = new King(this, board);
-            isCheck = false;
-            isCheckmate = false;
-            moveLists = new();
-            dropLists = new();
-        }
-
-        internal void InitLater()
-        {
-            hand = InitHand();
-            king = PlayersKing();
-        }
-
-        internal string PlayerNumber() => $"Player {(isPlayer1 ? 1 : 2)}";
-
-        internal void AfterOpponent()
-        {
-            isCheck = isCheckmate = false;
-            isCheck = king.IsCheck();
-            if (isCheck)
+            this.RemoveDangerousKingMoves();
+            this.isCheckmate = this.king.IsCheckmate();
+            if (this.isCheckmate)
             {
-                RemoveDangerousKingMoves();
-                isCheckmate = king.IsCheckmate();
-                if (isCheckmate)
-                {
-                    board.EndGame(Opponent());
-                    return;
-                }
-            }
-        }
-
-        internal void PrepareTurn()
-        {
-            if (isCheckmate)
-            {
-                board.EndGame(Opponent());
+                this.board.EndGame(this.Opponent());
                 return;
             }
-            if (board.isOver)
-                return;
-            if (isCheck)
-                RemoveDangerousKingMoves();
-            else RemoveDangerousMoves();
         }
+    }
 
-        private void RemoveDangerousKingMoves()
+    internal void PrepareTurn()
+    {
+        if (this.isCheckmate)
         {
-            List<Coordinate> newMoves = new();
-            foreach (Coordinate square in moveLists[board.CoordinateString(king.pos)])
+            this.board.EndGame(this.Opponent());
+            return;
+        }
+        if (this.board.isOver)
+        {
+            return;
+        }
+        if (this.isCheck)
+        {
+            this.RemoveDangerousKingMoves();
+        }
+        else
+        {
+            this.RemoveDangerousMoves();
+        }
+            
+    }
+
+    private void RemoveDangerousKingMoves()
+    {
+        List<Coordinate> newMoves = new();
+        string kingPos = this.board.CoordinateString(this.king.pos);
+        IEnumerable<Coordinate> kingMoves = this.moveLists[kingPos];
+        foreach (Coordinate square in kingMoves)
+        {
+            if (!this.king.DoesMoveCheckOwnKing(square))
             {
-                if (!king.DoesMoveCheckOwnKing(square))
-                    newMoves.Add(square);
+                newMoves.Add(square);
             }
-            moveLists[board.CoordinateString(king.pos)] = newMoves.AsEnumerable();
         }
+        this.moveLists[kingPos] = newMoves.AsEnumerable();
+    }
 
-        private void RemoveDangerousMoves()
+    private void RemoveDangerousMoves()
+    {
+        Dictionary<string, IEnumerable<Coordinate>> newMoves = new();
+        foreach (KeyValuePair<string, IEnumerable<Coordinate>> list in this.moveLists)
         {
-            Dictionary<string, IEnumerable<Coordinate>> newMoves = new();
-            foreach (KeyValuePair<string, IEnumerable<Coordinate>> list in moveLists)
+            Coordinate? pos = this.board.CoordByString(list.Key);
+            if (pos == null)
             {
-                Coordinate? pos = board.CoordByString(list.Key);
-                if (pos == null)
-                    continue;
-                Piece? piece = board.PieceAt(pos.Value);
-                if (piece == null)
-                    continue;
-                foreach (Coordinate move in list.Value)
+                continue;
+            }
+            Piece? piece = this.board.PieceAt(pos.Value);
+            if (piece == null)
+            {
+                continue;
+            }
+            foreach (Coordinate move in list.Value)
+            {
+                bool safeKingMove = piece is King king && !king.WouldBeCheckAt(move);
+                bool noSelfCheck = !piece.DoesMoveCheckOwnKing(move);
+                if (safeKingMove || noSelfCheck)
                 {
-                    if (piece is King king && !king.WouldBeCheckAt(move) || !piece.DoesMoveCheckOwnKing(move))
-                        newMoves[list.Key].Append(move);
+                    newMoves[list.Key].Append(move);
                 }
             }
-            moveLists = newMoves;
         }
+        this.moveLists = newMoves;
+    }
 
-        internal Player Opponent()
+    internal Player Opponent()
+    {
+        if (this == this.board.player1)
         {
-            if (this == board.player1)
-                return board.player2;
-            else if (this == board.player2)
-                return board.player1;
-            else
-                throw new Exception("Couldn't find opponent for this player. The opponent may not be initialized.");
+            return this.board.player2;
         }
-
-        private static Dictionary<Type, int> InitHand()
+        else if (this == this.board.player2)
         {
-            Dictionary<Type, int> hand = new();
-            hand[typeof(Pawn)] = 0;
-            hand[typeof(Lance)] = 0;
-            hand[typeof(Knight)] = 0;
-            hand[typeof(Silver)] = 0;
-            hand[typeof(Gold)] = 0;
-            hand[typeof(Bishop)] = 0;
-            hand[typeof(Rook)] = 0;
-            return hand;
+            return this.board.player1;
         }
-
-        private static KeyValuePair<Type, int> NewHandPiece(Piece piece, int newAmount) => piece switch
+        else
         {
-            Pawn _ => new KeyValuePair<Type, int>(typeof(Pawn), newAmount),
-            Bishop _ => new KeyValuePair<Type, int>(typeof(Bishop), newAmount),
-            Rook _ => new KeyValuePair<Type, int>(typeof(Rook), newAmount),
-            Lance _ => new KeyValuePair<Type, int>(typeof(Lance), newAmount),
-            Knight _ => new KeyValuePair<Type, int>(typeof(Knight), newAmount),
-            Silver _ => new KeyValuePair<Type, int>(typeof(Silver), newAmount),
-            Gold _ => new KeyValuePair<Type, int>(typeof(Gold), newAmount),
-            _ => new KeyValuePair<Type, int>(typeof(Pawn), newAmount),
+            throw new Exception("Couldn't find opponent for this player.");
+        }
+    }
+
+    private static Dictionary<Type, int> InitHand()
+    {
+        return new Dictionary<Type, int>()
+        {
+            [typeof(Pawn)] = 0,
+            [typeof(Lance)] = 0,
+            [typeof(Knight)] = 0,
+            [typeof(Silver)] = 0,
+            [typeof(Gold)] = 0,
+            [typeof(Bishop)] = 0,
+            [typeof(Rook)] = 0
         };
+    }
 
-        internal Dictionary<string, IEnumerable<Coordinate>> GetMoveLists()
+    internal Dictionary<string, IEnumerable<Coordinate>> GetMoveLists()
+    {
+        Dictionary<string, IEnumerable<Coordinate>> dict = new();
+        foreach (Piece piece in this.PlayersPieces())
         {
-            var dict = new Dictionary<string, IEnumerable<Coordinate>>();
-            foreach (var piece in PlayersPieces())
-                dict[board.CoordinateString(piece.pos)] = piece.FindMoves();
-            return dict;
+            dict[this.board.CoordinateString(piece.pos)] = piece.FindMoves();
         }
+        return dict;
+    }
 
-        internal Dictionary<string, IEnumerable<Coordinate>> GetDropLists()
+    internal Dictionary<string, IEnumerable<Coordinate>> GetDropLists()
+    {
+        Dictionary<string, IEnumerable<Coordinate>> dict = new();
+        foreach (KeyValuePair<Type, int> piece in this.hand)
         {
-            var dict = new Dictionary<string, IEnumerable<Coordinate>>();
-            foreach (var piece in hand)
+            if (piece.Value > 0)
             {
-                if (piece.Value > 0)
+                object[] parameters = new object[] { this, this.board };
+                Piece? tempPiece = (Piece?)Activator.CreateInstance(piece.Key, parameters);
+                if (tempPiece != null)
                 {
-                    Piece? tempPiece = (Piece?)Activator.CreateInstance(piece.Key, new object[] { this, board });
-                    if (tempPiece != null)
-                        dict[Names.Abbreviation(piece.Key)] = tempPiece.FindDrops();
-                }
-            }
-            return dict;
-        }
-
-        internal void ChangeHandPieceAmount(Piece piece, int change) => hand[piece.GetType()] += change;
-
-        internal Piece PieceFromHandByAbbr(string abbr) => abbr switch
-        {
-            "P" => new Pawn(this, board),
-            "L" => new Lance(this, board),
-            "N" => new Knight(this, board),
-            "S" => new Silver(this, board),
-            "G" => new Gold(this, board),
-            "B" => new Bishop(this, board),
-            "R" => new Rook(this, board),
-            _ => new Pawn(this, board)
-        };
-
-        internal HtmlBuilder HtmlHand()
-        {
-            HtmlBuilder builder = new HtmlBuilder().Class("hand");
-            foreach (KeyValuePair<Type, int> handPiece in hand)
-            {
-                Type piece = handPiece.Key;
-                int amount = handPiece.Value;
-                // string image = Images.Get(piece);
-                HtmlBuilder htmlHandPiece = new HtmlBuilder().Class("handPiece").Child(amount);
-                htmlHandPiece.Style($"background-image:url('{Images.GetUrl(piece)}')");
-                if (amount > 0 && board.IsPlayersTurn(this) && !board.isOver)
-                {
-                    string abbr = Names.Abbreviation(piece);
-                    htmlHandPiece.Id(abbr).Property("onclick", $"selectMoves('{abbr}')");
-                }
-                builder.Child(htmlHandPiece);
-            }
-            return builder;
-        }
-
-        internal IEnumerable<Piece> PlayersPieces()
-        {
-            for (int i = 0; i < 9; i++)
-            {
-                for (int j = 0; j < 9; j++)
-                {
-                    Piece? piece = board.pieces[i, j];
-                    if (piece != null && this == piece.player)
-                        yield return piece;
+                    dict[Names.Abbreviation(piece.Key)] = tempPiece.FindDrops();
                 }
             }
         }
+        return dict;
+    }
 
-        internal IEnumerable<T> AllPiecesOfType<T>() where T : Piece
+    internal void ChangeHandPieceAmount(Piece piece, int change)
+    {
+        this.hand[piece.GetType()] += change;
+    }
+
+    internal Piece PieceFromHandByAbbr(string abbr) => abbr switch
+    {
+        "P" => new Pawn(this, this.board),
+        "L" => new Lance(this, this.board),
+        "N" => new Knight(this, this.board),
+        "S" => new Silver(this, this.board),
+        "G" => new Gold(this, this.board),
+        "B" => new Bishop(this, this.board),
+        "R" => new Rook(this, this.board),
+        _ => new Pawn(this, this.board)
+    };
+
+    internal HtmlBuilder HtmlHand()
+    {
+        HtmlBuilder builder = new HtmlBuilder().Class("hand");
+        foreach (KeyValuePair<Type, int> handPiece in this.hand)
         {
-            foreach (Piece piece in PlayersPieces())
+            Type piece = handPiece.Key;
+            int amount = handPiece.Value;
+            // string image = Images.Get(piece);
+            HtmlBuilder htmlHandPiece = new HtmlBuilder()
+                .Class("handPiece")
+                .Child(amount)
+                .Style($"background-image:url('{Images.Get(piece)}')");
+            if (amount > 0 && this.board.IsPlayersTurn(this) && !this.board.isOver)
             {
-                if (piece is T t)
-                    yield return t;
+                string abbr = Names.Abbreviation(piece);
+                htmlHandPiece.Id(abbr)
+                    .Property("onclick", $"selectMoves('{abbr}')");
+            }
+            builder.Child(htmlHandPiece);
+        }
+        return builder;
+    }
+
+    internal IEnumerable<Piece> PlayersPieces()
+    {
+        for (int i = 0; i < 9; i++)
+        {
+            for (int j = 0; j < 9; j++)
+            {
+                Piece? piece = this.board.pieces[i, j];
+                if (piece != null && this == piece.player)
+                {
+                    yield return piece;
+                }
             }
         }
+    }
 
-        internal King PlayersKing()
+    internal King PlayersKing()
+    {
+        foreach (Piece piece in this.PlayersPieces())
         {
-            foreach (Piece piece in PlayersPieces())
+            if (piece is King king)
             {
-                if (piece is King king)
-                    return king;
+                return king;
             }
-            throw new Exception("No king of this player was found, even though it should have already been initialized.");
         }
+        throw new Exception("No king of this player was found, even though it should have.");
+    }
 
-        internal string JavascriptMoveLists()
+    internal string JavascriptMoveLists()
+    {
+        string text = "var squareMoveDict = {";
+        Dictionary<string, IEnumerable<Coordinate>> dict = this.moveLists;
+        dict = dict.Concat(this.dropLists).ToDictionary(x => x.Key, x => x.Value);
+        foreach (KeyValuePair<string, IEnumerable<Coordinate>> entry in dict)
         {
-            string text = "var squareMoveDict = {";
-            Dictionary<string, IEnumerable<Coordinate>> dict = moveLists;
-            dict = dict.Concat(dropLists).ToDictionary(x => x.Key, x => x.Value);
-            foreach (KeyValuePair<string, IEnumerable<Coordinate>> entry in dict)
-                text += $"{entry.Key}: {JavascriptSquareList(entry.Value)}, ";
-            int last = text.LastIndexOf(',');
-            if (last >= 0)
-                text = text[..last];
-            return text + "};";
+            text += $"{entry.Key}: {this.JavascriptSquareList(entry.Value)}, ";
         }
-
-        private string JavascriptSquareList(IEnumerable<Coordinate> squares)
+        int last = text.LastIndexOf(',');
+        if (last >= 0)
         {
-            return "[]";
-            /*
-            int length = squares.Count();
-            string text = "[";
-            if (length <= 0)
-                return text + "]";
-            text += $"\"{board.CoordinateString(squares[0])}\"";
-            for (int i = 1; i < length; i++)
-                text += $", \"{board.CoordinateString(squares[i])}\"";
+            text = text[..last];
+        }
+        return text + "};";
+    }
+
+    private string JavascriptSquareList(IEnumerable<Coordinate> squares)
+    {
+        return "[]";
+        /*
+        int length = squares.Count();
+        string text = "[";
+        if (length <= 0)
             return text + "]";
-            */
-        }
+        text += $"\"{board.CoordinateString(squares[0])}\"";
+        for (int i = 1; i < length; i++)
+            text += $", \"{board.CoordinateString(squares[i])}\"";
+        return text + "]";
+        */
     }
 }

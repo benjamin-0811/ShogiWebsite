@@ -1,22 +1,25 @@
-﻿namespace ShogiWebsite.Shogi.Pieces
+﻿namespace ShogiWebsite.Shogi.Pieces;
+
+internal class Bishop : Piece
 {
-    internal class Bishop : Piece
+    internal Bishop(Player player, Board board) : base(player, true, board)
+    { }
+
+    internal override IEnumerable<Coordinate> FindMoves()
     {
-        internal Bishop(Player player, Board board, Coordinate coordinate) : base(player, true, board, coordinate)
-        { }
-
-        internal Bishop(Player player, Board board, int column, int row) : base(player, true, board, column, row)
-        { }
-
-        internal Bishop(Player player, Board board) : base(player, true, board)
-        { }
-
-        internal override IEnumerable<Coordinate> FindMoves()
+        Func<Coordinate, int, Coordinate?>[] diagonal = new[]
         {
-            IEnumerable<Coordinate> moves = RangeMoves(new Func<Coordinate, int, Coordinate?>[] { board.NE, board.NW, board.SE, board.SW });
-            if (isPromoted)
-                moves = moves.Concat(ListMoves(new Func<Coordinate, int, Coordinate?>[] { board.N, board.E, board.S, board.W }));
-            return moves;
+            this.board.NE, this.board.NW, this.board.SE, this.board.SW
+        };
+        IEnumerable<Coordinate> moves = this.RangeMoves(diagonal);
+        if (this.isPromoted)
+        {
+            Func<Coordinate, int, Coordinate?>[] straight = new[]
+            {
+                this.board.N, this.board.E, this.board.S, this.board.W
+            };
+            moves = moves.Concat(this.ListMoves(straight));
         }
+        return moves;
     }
 }

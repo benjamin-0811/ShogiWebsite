@@ -1,317 +1,342 @@
 ﻿using ShogiWebsite.Shogi.Pieces;
+using System.Data.Common;
 using System.Text;
 
-namespace ShogiWebsite.Shogi
+namespace ShogiWebsite.Shogi;
+
+internal struct Coordinate
 {
-    internal struct Coordinate
+    private int column;
+    private int row;
+
+    internal int Column { get => this.column; set => this.column = value; }
+    internal int Row { get => this.row; set => this.row = value; }
+
+    internal Coordinate(int column, int row)
     {
-        private int column;
-        private int row;
+        this.column = column;
+        this.row = row;
+    }
+}
 
-        internal int Column { get => column; set => column = value; }
-        internal int Row { get => row; set => row = value; }
+internal class Board
+{
+    internal readonly int width;
+    internal readonly int height;
+    internal Piece?[,] pieces;
+    internal bool isPlayer1Turn;
+    internal Player player1;
+    internal Player player2;
+    internal HtmlBuilder log;
+    internal bool isOver;
+    internal Player? winner;
+    internal Phase phase;
 
-        internal Coordinate(int column, int row)
+    internal readonly string[] columns;
+    internal readonly string[] rows;
+
+    internal Board()
+    {
+        string path = $@"{Program.projectDir}\assets\layouts\standard.txt";
+        List<string> layout = File.ReadLines(path).ToList();
+        string dimensions = layout[0];
+        layout.RemoveAt(0);
+        string[] colAndRow = dimensions.Split('x', 2);
+        this.width = int.Parse(colAndRow[0]);
+        this.height = int.Parse(colAndRow[1]);
+        this.columns = this.Columns().ToArray();
+        this.rows = this.Rows().ToArray();
+        // Square [ column , row ]
+        this.pieces = new Piece?[this.width, this.height];
+        this.player1 = new Player(this, true);
+        this.player2 = new Player(this, false);
+        this.InitBoard(layout);
+        //InitBoard();
+        //InitCheckMate();
+        this.isPlayer1Turn = true;
+        this.log = new HtmlBuilder().Id("log").Class("log");
+        this.isOver = false;
+        this.winner = null;
+        this.phase = Phase.ChoosePiece;
+        this.player1.InitLater();
+        this.player2.InitLater();
+    }
+
+    internal void Log(string newEntry)
+    {
+        this.log.Child(new HtmlBuilder("p").Child(newEntry));
+    }
+
+    private IEnumerable<string> Columns()
+    {
+        for (int i = 0; i < this.width; i++)
         {
-            this.column = column;
-            this.row = row;
+            yield return $"{this.width - i}";
         }
     }
 
-    internal class Board
+    private IEnumerable<string> Rows()
     {
-        internal readonly int width;
-        internal readonly int height;
-        internal Piece?[,] pieces;
-        internal bool isPlayer1Turn;
-        internal Player player1;
-        internal Player player2;
-        internal HtmlBuilder log;
-        internal bool isOver;
-        internal Player? winner;
-        internal Phase phase;
-
-        internal readonly string[] columns;
-        internal readonly string[] rows;
-
-        internal Board()
+        for (int i = 0; i < this.height; i++)
         {
-            width = 9;
-            height = 9;
-            columns = Columns().ToArray();
-            rows = Rows().ToArray();
-            // Square [ column , row ]
-            pieces = new Piece?[9, 9];
-            player1 = new Player(this, true);
-            player2 = new Player(this, false);
-            InitBoard();
-            //InitCheckMate();
-            isPlayer1Turn = true;
-            log = new HtmlBuilder().Id("log").Class("log");
-            isOver = false;
-            winner = null;
-            phase = Phase.ChoosePiece;
-            player1.InitLater();
-            player2.InitLater();
+            yield return $"{(char)('a' + i)}";
         }
+    }
 
-        internal void Log(string newEntry) => log.Child(new HtmlBuilder("p").Child(newEntry));
-
-        private IEnumerable<string> Columns()
+    internal void SetPiece(Piece? piece, Coordinate pos)
+    {
+        if (!this.IsOnBoard(pos))
         {
-            for (int i = 0; i < width; i++)
-                yield return $"{width - i}";
+            return;
         }
-
-        private IEnumerable<string> Rows()
+        this.pieces[pos.Column, pos.Row] = piece;
+        if (piece != null)
         {
-            for (int i = 0; i < height; i++)
-                yield return $"{(char)('a' + i)}";
+            piece.pos = pos;
         }
+    }
 
-        internal void SetPiece(Piece? piece, int column, int row)
+    internal void SetPiece(Piece? piece, int column, int row)
+    {
+        SetPiece(piece, new Coordinate(column, row));
+    }
+
+    internal string CoordinateString(Coordinate pos)
+    {
+        return this.IsOnBoard(pos) ? $"{this.rows[pos.Row]}{this.columns[pos.Column]}" : "hand";
+    }
+
+    internal bool IsOnBoard(Coordinate pos)
+    {
+        bool columnInBound = 0 <= pos.Column && pos.Column < this.width;
+        bool rowInBound = 0 <= pos.Row && pos.Row < this.height;
+        return columnInBound && rowInBound;
+    }
+
+    internal Piece? PieceAt(Coordinate pos)
+    {
+        return this.IsOnBoard(pos) ? this.pieces[pos.Column, pos.Row] : null;
+    }
+
+    internal enum Phase
+    {
+        ChoosePiece,
+        AskForPromotion,
+        SelectTarget
+    }
+
+    internal Coordinate? CoordByString(string pos)
+    {
+        if (pos.Length != 2)
         {
-            if (!IsOnBoard(column, row))
-                return;
-            pieces[column, row] = piece;
-            if (piece != null)
-                piece.pos = new Coordinate(column, row);
+            return null;
         }
+        int row = Array.IndexOf(this.rows, pos[0]);
+        int column = Array.IndexOf(this.columns, pos[1]);
+        return new Coordinate(column, row);
+    }
 
-        internal void SetPiece(Piece? piece, Coordinate pos) => SetPiece(piece, pos.Column, pos.Row);
+    internal Piece? PieceByCoordString(string pos)
+    {
+        Coordinate? coord = this.CoordByString(pos);
+        return coord == null ? null : this.PieceAt(coord.Value);
+    }
 
-        internal string CoordinateString(int column, int row) => IsOnBoard(column, row) ? $"{rows[row]}{columns[column]}" : "hand";
+    internal Coordinate? N(Coordinate pos, int distance = 1)
+    {
+        pos.Row -= distance;
+        return this.IsOnBoard(pos) ? pos : null;
+    }
 
-        internal string CoordinateString(Coordinate pos) => CoordinateString(pos.Column, pos.Row);
+    internal Coordinate? S(Coordinate pos, int distance = 1)
+    {
+        return this.N(pos, -distance);
+    }
 
-        internal bool IsOnBoard(int column, int row) => 0 <= column && column < width && 0 <= row && row < height;
+    internal Coordinate? E(Coordinate pos, int distance = 1)
+    {
+        pos.Column += distance;
+        return this.IsOnBoard(pos) ? pos : null;
+    }
 
-        internal bool IsOnBoard(Coordinate pos) => IsOnBoard(pos.Column, pos.Row);
+    internal Coordinate? W(Coordinate pos, int distance = 1)
+    {
+        return this.E(pos, -distance);
+    }
 
-        internal Piece? PieceAt(int column, int row) => IsOnBoard(column, row) ? pieces[column, row] : null;
+    internal Coordinate? NE(Coordinate pos, int distance = 1)
+    {
+        Coordinate? n = this.N(pos, distance);
+        return n != null ? this.E(n.Value, distance) : null;
+    }
 
-        internal Piece? PieceAt(Coordinate pos) => PieceAt(pos.Column, pos.Row);
+    internal Coordinate? NW(Coordinate pos, int distance = 1)
+    {
+        Coordinate? n = this.N(pos, distance);
+        return n != null ? this.W(n.Value, distance) : null;
+    }
 
-        internal enum Phase
+    internal Coordinate? SE(Coordinate pos, int distance = 1)
+    {
+        return this.NW(pos, -distance);
+    }
+
+    internal Coordinate? SW(Coordinate pos, int distance = 1)
+    {
+        return this.NE(pos, -distance);
+    }
+
+    private void InitBoard(List<string> layout)
+    {
+        int rowAmount = layout.Count;
+        for (int row = 0; row < rowAmount; row++)
         {
-            ChoosePiece,
-            AskForPromotion,
-            SelectTarget
-        }
-
-        internal Coordinate? CoordByString(string pos)
-        {
-            if (pos.Length != 2)
-                return null;
-            int row = Array.IndexOf(rows, pos[0]);
-            int column = Array.IndexOf(columns, pos[1]);
-            return new Coordinate(column, row);
-        }
-
-        internal Piece? PieceByCoordString(string pos)
-        {
-            Coordinate? coord = CoordByString(pos);
-            return coord == null ? null : PieceAt(coord.Value);
-        }
-
-        internal Coordinate? Direction(Func<int, int, int, Coordinate?> function, Coordinate pos, int distance = 1)
-        {
-            return function(pos.Column, pos.Row, distance);
-        }
-
-        internal Coordinate? N(int column, int row, int distance = 1)
-        {
-            int newRow = row - distance;
-            return IsOnBoard(column, newRow) ? new Coordinate(column, newRow) : null;
-        }
-
-        internal Coordinate? N(Coordinate pos, int distance = 1) => Direction(N, pos, distance);
-
-        internal Coordinate? S(int column, int row, int distance = 1)
-        {
-            return N(column, row, -distance);
-        }
-
-        internal Coordinate? S(Coordinate pos, int distance = 1) => Direction(S, pos, distance);
-
-        internal Coordinate? E(int column, int row, int distance = 1)
-        {
-            int newColumn = column + distance;
-            return IsOnBoard(newColumn, row) ? new Coordinate(newColumn, row) : null;
-        }
-
-        internal Coordinate? E(Coordinate pos, int distance = 1) => Direction(E, pos, distance);
-
-        internal Coordinate? W(int column, int row, int distance = 1)
-        {
-            return E(column, row, -distance);
-        }
-
-        internal Coordinate? W(Coordinate pos, int distance = 1) => Direction(W, pos, distance);
-
-        internal Coordinate? NE(int column, int row, int distance = 1)
-        {
-            Coordinate? n = N(column, row, distance);
-            return n != null ? E(n.Value, distance) : null;
-        }
-
-        internal Coordinate? NE(Coordinate pos, int distance = 1) => Direction(NE, pos, distance);
-
-        internal Coordinate? NW(int column, int row, int distance = 1)
-        {
-            Coordinate? n = N(column, row, distance);
-            return n != null ? W(n.Value, distance) : null;
-        }
-
-        internal Coordinate? NW(Coordinate pos, int distance = 1) => Direction(NW, pos, distance);
-
-        internal Coordinate? SE(int column, int row, int distance = 1)
-        {
-            return NW(column, row, -distance);
-        }
-
-        internal Coordinate? SE(Coordinate pos, int distance = 1) => Direction(SE, pos, distance);
-
-        internal Coordinate? SW(int column, int row, int distance = 1)
-        {
-            return NE(column, row, -distance);
-        }
-
-        internal Coordinate? SW(Coordinate pos, int distance = 1) => Direction(SW, pos, distance);
-
-        private void InitBoard()
-        {
-            for (int i = 0; i < 9; i++)
+            IEnumerable<string> pieces = layout[row].Split(',');
+            int columnAmount = pieces.Count();
+            for (int column = 0; column < columnAmount; column++)
             {
-                SetPiece(new Pawn(player2, this), i, 2);
-                SetPiece(new Pawn(player1, this), i, 6);
+                Piece? piece = StringPieceConverter.GetPiece(this, pieces.ElementAt(column).Trim());
+                this.SetPiece(piece, column, row);
             }
-            SetPiece(new Bishop(player2, this), 7, 1);
-            SetPiece(new Bishop(player1, this), 1, 7);
-            SetPiece(new Rook(player2, this), 1, 1);
-            SetPiece(new Rook(player1, this), 7, 7);
-            SetPiece(new Lance(player2, this), 0, 0);
-            SetPiece(new Lance(player1, this), 0, 8);
-            SetPiece(new Lance(player2, this), 8, 0);
-            SetPiece(new Lance(player1, this), 8, 8);
-            SetPiece(new Knight(player2, this), 1, 0);
-            SetPiece(new Knight(player1, this), 1, 8);
-            SetPiece(new Knight(player2, this), 7, 0);
-            SetPiece(new Knight(player1, this), 7, 8);
-            SetPiece(new Silver(player2, this), 2, 0);
-            SetPiece(new Silver(player1, this), 2, 8);
-            SetPiece(new Silver(player2, this), 6, 0);
-            SetPiece(new Silver(player1, this), 6, 8);
-            SetPiece(new Gold(player2, this), 3, 0);
-            SetPiece(new Gold(player1, this), 3, 8);
-            SetPiece(new Gold(player2, this), 5, 0);
-            SetPiece(new Gold(player1, this), 5, 8);
-            SetPiece(new King(player2, this), 4, 0);
-            SetPiece(new King(player1, this), 4, 8);
         }
+    }
 
-        private void InitCheckMate()
+    internal HtmlBuilder ToHtml()
+    {
+        HtmlBuilder builder = new HtmlBuilder().Class("board");
+        for (int i = 0; i < this.height; i++)
         {
-            SetPiece(new Gold(player1, this), 3, 8);
-            SetPiece(new Gold(player1, this), 4, 7);
-            SetPiece(new King(player1, this), 4, 8);
-            SetPiece(new Rook(player2, this), 5, 7);
-            SetPiece(new Rook(player2, this), 5, 8);
-            SetPiece(new Bishop(player2, this), 8, 2);
-            SetPiece(new King(player2, this), 4, 0);
-        }
-
-        internal HtmlBuilder ToHtml()
-        {
-            HtmlBuilder builder = new HtmlBuilder().Class("board");
-            for (int i = 0; i < height; i++)
+            HtmlBuilder row = new HtmlBuilder().Class("row");
+            for (int j = 0; j < this.width; j++)
             {
-                HtmlBuilder row = new HtmlBuilder().Class("row");
-                for (int j = 0; j < width; j++)
-                    row.Child(SquareHtml(new Coordinate(j, i)));
-                builder.Child(row);
+                row.Child(this.SquareHtml(new Coordinate(j, i)));
             }
+            builder.Child(row);
+        }
+        return builder;
+    }
+
+    internal string JavascriptMoveLists()
+    {
+        Player currentPlayer = this.isPlayer1Turn ? this.player1 : this.player2;
+        return currentPlayer.JavascriptMoveLists();
+    }
+
+    internal bool IsPlayersTurn(Player player)
+    {
+        bool isPlayer1Turn = player.isPlayer1 && this.isPlayer1Turn;
+        bool isPlayer2Turn = !(player.isPlayer1 || this.isPlayer1Turn);
+        return isPlayer1Turn || isPlayer2Turn;
+    }
+
+    internal HtmlBuilder LogToHtml()
+    {
+        return this.log;
+    }
+
+    internal void EndGame(Player winner)
+    {
+        this.isOver = true;
+        this.winner = winner;
+    }
+
+    internal void PlayerTurn()
+    {
+        Player player = this.isPlayer1Turn ? this.player1 : this.player2;
+        player.AfterOpponent();
+        if (this.isOver)
+        {
+            return;
+        }
+        player.PrepareTurn();
+    }
+
+    internal string PromotionZone()
+    {
+        string promotionZone = this.isPlayer1Turn ? "['a', 'b', 'c']" : "['g', 'h', 'i']";
+        return $"var promotionZone = {promotionZone};";
+    }
+
+    internal string ForcePawnLancePromotion()
+    {
+        string pawnLancePromo = this.isPlayer1Turn ? "'a'" : "'i'";
+        return $"var pawnLancePromo = {pawnLancePromo};";
+    }
+
+    internal string ForceKnightPromotion()
+    {
+        string knightPromo = this.isPlayer1Turn ? "['a', 'b']" : "['h', 'i']";
+        return $"var knightPromo = {knightPromo};";
+    }
+
+    internal HtmlBuilder GameEndHtml()
+    {
+        HtmlBuilder builder = new();
+        if (!this.isOver)
+        {
             return builder;
         }
+        HtmlBuilder button = new HtmlBuilder()
+            .Class("button")
+            .Property("onclick", "restart()")
+            .Child("New Game");
+        string p = $"The Winner is: Player {(this.winner == this.player1 ? "1" : "2")}!";
+        HtmlBuilder message = new HtmlBuilder("p").Child(p);
+        HtmlBuilder box = new HtmlBuilder()
+            .Class("overlay-box")
+            .Child(button)
+            .Child(message);
+        return builder.Id("game-end-overlay").Child(box);
+    }
 
-        internal string JavascriptMoveLists()
+    internal HtmlBuilder SquareHtml(Coordinate pos)
+    {
+        string posString = this.CoordinateString(pos);
+        IEnumerable<Coordinate> highlighted = this.GetHighlightedSquares(pos);
+        string cl = highlighted.Contains(pos) ? "highlightedSquare" : "square";
+        StringBuilder squareClass = new(cl);
+        HtmlBuilder builder = new HtmlBuilder().Id(posString);
+        Piece? piece = this.PieceAt(pos);
+        if (piece != null && this.IsPlayersTurn(piece.player) && !this.isOver)
         {
-            Player currentPlayer = isPlayer1Turn ? player1 : player2;
-            return currentPlayer.JavascriptMoveLists();
-        }
-
-        internal bool IsPlayersTurn(Player player) => (player.isPlayer1 && isPlayer1Turn) || !(player.isPlayer1 || isPlayer1Turn);
-
-        internal HtmlBuilder LogToHtml()
-        {
-            return log;
-        }
-
-        internal void EndGame(Player winner)
-        {
-            isOver = true;
-            this.winner = winner;
-        }
-
-        internal void PlayerTurn()
-        {
-            Player player = isPlayer1Turn ? player1 : player2;
-            player.AfterOpponent();
-            if (isOver)
-                return;
-            player.PrepareTurn();
-        }
-
-        internal string PromotionZone() => $"var promotionZone = {(isPlayer1Turn ? "['a', 'b', 'c']" : "['g', 'h', 'i']")};";
-
-        internal string ForcePawnLancePromotion() => $"var pawnLancePromo = {(isPlayer1Turn ? "'a'" : "'i'")};";
-
-        internal string ForceKnightPromotion() => $"var knightPromo = {(isPlayer1Turn ? "['a', 'b']" : "['h', 'i']")};";
-
-        internal HtmlBuilder GameEndHtml()
-        {
-            HtmlBuilder builder = new();
-            if (!isOver)
-                return builder;
-            HtmlBuilder button = new HtmlBuilder().Class("button").Property("onclick", "restart()").Child("New Game");
-            HtmlBuilder message = new HtmlBuilder("p").Child($"The Winner is: Player {(winner == player1 ? "1" : "2")!}");
-            HtmlBuilder box = new HtmlBuilder().Class("overlay-box").Child(button).Child(message);
-            return builder.Id("game-end-overlay").Child(box);
-        }
-
-        internal HtmlBuilder SquareHtml(Coordinate pos)
-        {
-            string posString = CoordinateString(pos);
-            StringBuilder squareClass = new();
-            // "square"
-
-            HtmlBuilder builder = new HtmlBuilder().Id(posString);
-            Piece? piece = PieceAt(pos);
-            if (piece != null && IsPlayersTurn(piece.player) && !isOver)
+            if (piece.canPromote && !piece.IsPromoted())
             {
-                if (piece.canPromote && !piece.IsPromoted())
+                squareClass.Append(" promotable");
+                builder.Class("promotable");
+                if (piece is Pawn or Lance)
                 {
-                    squareClass.Append(" promotable");
-                    builder.Class("promotable");
-                    if (piece is Pawn or Lance)
-                        squareClass.Append(" forcePromo1");
-                    else if (piece is Knight)
-                        squareClass.Append(" forcePromo2");
+                    squareClass.Append(" forcePromo1");
                 }
-                builder.Property("onclick", $"submitForm('{posString}');");
+                else if (piece is Knight)
+                {
+                    squareClass.Append(" forcePromo2");
+                }
             }
-            return builder.Class(squareClass.ToString()).Child(HtmlPieceImage(piece));
+            builder.Property("onclick", $"submitForm('{posString}');");
         }
+        return builder.Class(squareClass.ToString()).Child(HtmlPieceImage(piece));
+    }
 
-        private static HtmlBuilder HtmlPieceImage(Piece? piece)
+    private static HtmlBuilder HtmlPieceImage(Piece? piece)
+    {
+        HtmlBuilder builder = new("img");
+        if (piece != null)
         {
-            HtmlBuilder builder = new("img");
-            if (piece != null)
-                builder.Class($"{(piece.player.isPlayer1 ? "black" : "white")}-piece");
-            // builder.Property("src", $"data:image/png;base64,{Images.Get(piece)}");
-            builder.Property("src", Images.GetUrl(piece));
-            builder.Property("alt", Names.Get(piece));
-            return builder;
+            string player = piece.player.isPlayer1 ? "black" : "white";
+            builder.Class($"{player}-piece");
         }
+        builder.Property("src", Images.Get(piece));
+        builder.Property("alt", Names.Get(piece));
+        return builder;
+    }
+
+    internal IEnumerable<Coordinate> GetHighlightedSquares(Coordinate pos)
+    {
+        Piece? piece = this.PieceAt(pos);
+        if (piece == null)
+        {
+            return Enumerable.Empty<Coordinate>();
+        }
+        return this.IsOnBoard(piece.pos) ? piece.FindMoves() : piece.FindDrops();
     }
 }
