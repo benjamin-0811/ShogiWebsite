@@ -5,21 +5,12 @@ internal class Bishop : Piece
     internal Bishop(Player player, Board board) : base(player, true, board)
     { }
 
+
     internal override IEnumerable<Coordinate> FindMoves()
     {
-        Func<Coordinate, int, Coordinate?>[] diagonal = new[]
-        {
-            this.board.NE, this.board.NW, this.board.SE, this.board.SW
-        };
-        IEnumerable<Coordinate> moves = this.RangeMoves(diagonal);
-        if (this.isPromoted)
-        {
-            Func<Coordinate, int, Coordinate?>[] straight = new[]
-            {
-                this.board.N, this.board.E, this.board.S, this.board.W
-            };
-            moves = moves.Concat(this.ListMoves(straight));
-        }
+        IEnumerable<Coordinate> moves = RangeMoves(new[] { board.NE, board.NW, board.SE, board.SW });
+        if (isPromoted)
+            moves = moves.Concat(ListMoves(new[] { board.N, board.E, board.S, board.W  }));
         return moves;
     }
 }

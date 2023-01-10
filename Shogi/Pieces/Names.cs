@@ -26,6 +26,7 @@ internal static class Names
     private static readonly string abbreviationGold = "G";
     private static readonly string abbreviationKing = "K";
 
+
     internal static string Get(Piece? piece) => piece switch
     {
         Pawn _ => piece.IsPromoted() ? promoted : pawn,
@@ -38,6 +39,7 @@ internal static class Names
         King _ => king,
         _ => ""
     };
+
 
     internal static string Get(Type type) => type switch
     {
@@ -52,6 +54,7 @@ internal static class Names
         _ => ""
     };
 
+
     internal static string Abbreviation(Piece? piece)
     {
         string abbreviation = piece != null ? Abbreviation(piece.GetType()) : "";
@@ -59,6 +62,7 @@ internal static class Names
             abbreviation = "+" + abbreviation;
         return abbreviation;
     }
+
 
     internal static string Abbreviation(Type type) => type switch
     {

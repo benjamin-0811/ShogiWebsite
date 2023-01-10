@@ -5,8 +5,6 @@ internal class Gold : Piece
     internal Gold(Player player, Board board) : base(player, false, board)
     { }
 
-    internal override IEnumerable<Coordinate> FindMoves()
-    {
-        return this.GoldMoves();
-    }
+
+    internal override IEnumerable<Coordinate> FindMoves() => GoldMoves();
 }

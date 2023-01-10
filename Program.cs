@@ -11,8 +11,8 @@ class Program
     internal static readonly string projectDir = GetProjectDir();
     internal static string action = "";
     private static Board board = new();
-    private static readonly HtmlBuilder title = new HtmlBuilder("title").Child("Shogi");
     private static bool run = true;
+
 
     public static void Main()
     {
@@ -41,59 +41,51 @@ class Program
         httpListener.Close();
     }
 
+
     internal static byte[] GetResponseForUrl(string url)
     {
         string ext = Path.GetExtension(url);
         Console.WriteLine($"URL:\t{url}");
-        if (ext == ".png" || ext == ".ico")
+
+        return ext switch
         {
-            return Images.GetBytes(url);
-        } 
-        else if (ext == "")
-        {
-            return AnswerHTML();
-        }
-        else if (ext == ".css")
-        {
-            return GetStyleSheet(url);
-        }
-        else if (ext == ".js")
-        {
-            return GetJavaScript(url);
-        }
-        return Array.Empty<byte>();
+            ".png" or ".ico" => Images.GetBytes(url),
+            "" => AnswerHTML(),
+            ".css" => GetStyleSheet(url),
+            ".js" => GetJavaScript(url),
+            _ => Array.Empty<byte>(),
+        };
     }
 
-    internal static byte[] GetStyleSheet(string url)
-    {
-        string stylesheet = File.ReadAllText(projectDir + @"\assets\css\" + url);
-        return Encoding.UTF8.GetBytes(stylesheet);
-    }
 
-    internal static byte[] GetJavaScript(string url)
-    {
-        string stylesheet = File.ReadAllText(projectDir + @"\assets\js\" + url);
-        return Encoding.UTF8.GetBytes(stylesheet);
-    }
+    internal static byte[] GetStyleSheet(string url) => Helper.GetFileContentBytes(projectDir + @"\assets\css\" + url);
+
+
+    internal static byte[] GetJavaScript(string url) => Helper.GetFileContentBytes(projectDir + @"\assets\js\" + url);
+
 
     internal static string GetProjectDir()
     {
         string d1 = Directory.GetCurrentDirectory();
+
         DirectoryInfo? d2 = Directory.GetParent(d1);
         Helper.AssertNotNull(d2);
+
         DirectoryInfo? d3 = d2.Parent;
         Helper.AssertNotNull(d3);
+
         DirectoryInfo? d4 = d3.Parent;
         Helper.AssertNotNull(d4);
+
         return d4.ToString();
     }
+
 
     private static string GetAction(string? text)
     {
         if (text == null)
-        {
             return "";
-        }
+
         StringReader reader = new(text);
         string? line = reader.ReadLine();
         while (line != null)
@@ -109,37 +101,44 @@ class Program
         return "";
     }
 
+
     private static HtmlBuilder HtmlHead()
     {
-        HtmlBuilder head = new HtmlBuilder("head")
-            .Child(new HtmlBuilder("meta")
+        HtmlBuilder charset = new HtmlBuilder("meta")
             .Property("content", "text/html; charset=ISO-8859-1")
-            .Property("http-equiv", "content-type"))
-            .Child(new HtmlBuilder("meta")
+            .Property("http-equiv", "content-type");
+        HtmlBuilder viewport = new HtmlBuilder("meta")
             .Property("name", "viewport")
             .Property("content", "width=device-width")
-            .Property("initial-scale", "1"))
-            .Child(new HtmlBuilder("link")
+            .Property("initial-scale", "1");
+        HtmlBuilder mainColor = new HtmlBuilder("link")
             .Property("rel", "stylesheet")
-            .Property("href", "m_gray.css"))
-            .Child(new HtmlBuilder("link")
+            .Property("href", "m_gray.css");
+        HtmlBuilder contrastColor = new HtmlBuilder("link")
             .Property("rel", "stylesheet")
-            .Property("href", "c_silver.css"))
-            .Child(new HtmlBuilder("link")
+            .Property("href", "c_silver.css");
+        HtmlBuilder style = new HtmlBuilder("link")
             .Property("rel", "stylesheet")
-            .Property("href", "main.css"))
-            .Child(new HtmlBuilder("script")
-            .Property("src", "functions.js"));
+            .Property("href", "main.css");
+        HtmlBuilder scriptFile = new HtmlBuilder("script")
+            .Property("src", "functions.js");
         HtmlBuilder script = new HtmlBuilder("script")
-            .Child("sessionStorage.clear();")
-            .Child(board.PromotionZone())
-            .Child(board.ForcePawnLancePromotion())
-            .Child(board.ForceKnightPromotion())
-            .Child(board.JavascriptMoveLists());
+            .Child("sessionStorage.clear();");
         HtmlBuilder title = new HtmlBuilder("title")
             .Child("Shogi");
-        return head.Child(script).Child(title);
+
+        HtmlBuilder head = new HtmlBuilder("head")
+            .Child(charset)
+            .Child(viewport)
+            .Child(mainColor)
+            .Child(contrastColor)
+            .Child(style)
+            .Child(scriptFile)
+            .Child(script)
+            .Child(title);
+        return head;
     }
+
 
     private static HtmlBuilder HtmlPromotionOverlay()
     {
@@ -161,6 +160,7 @@ class Program
         return overlay.Child(box);
     }
 
+
     private static HtmlBuilder HtmlBoard()
     {
         HtmlBuilder board1 = new HtmlBuilder()
@@ -172,12 +172,9 @@ class Program
         return board1;
     }
 
+
     private static HtmlBuilder HtmlLog()
     {
-        HtmlBuilder side = new HtmlBuilder()
-            .Id("side")
-            .Style("float:left; margin-left:16px;")
-            .Child(board.LogToHtml());
         HtmlBuilder surrender = new HtmlBuilder()
             .Id("surrender_button")
             .Class("button")
@@ -188,20 +185,29 @@ class Program
             .Class("button")
             .Property("onclick", "restart();")
             .Child("Restart");
-        return side.Child(surrender).Child(restart);
+        HtmlBuilder side = new HtmlBuilder()
+            .Id("side")
+            .Style("float:left; margin-left:16px;")
+            .Child(board.LogToHtml())
+            .Child(surrender)
+            .Child(restart);
+        return side;
     }
+
 
     private static HtmlBuilder HtmlMain()
     {
-        HtmlBuilder main = new HtmlBuilder("main")
-            .Child(HtmlPromotionOverlay())
-            .Child(board.GameEndHtml());
         HtmlBuilder gameArea = new HtmlBuilder()
             .Style("width:836px;margin:0 auto;")
             .Child(HtmlBoard())
             .Child(HtmlLog());
-        return main.Child(gameArea);
+        HtmlBuilder main = new HtmlBuilder("main")
+            .Child(HtmlPromotionOverlay())
+            .Child(board.GameEndHtml())
+            .Child(gameArea);
+        return main;
     }
+
 
     private static HtmlBuilder HtmlHiddenForm()
     {
@@ -218,42 +224,45 @@ class Program
         return form;
     }
 
+
     private static byte[] AnswerHTML()
     {
-        HtmlBuilder html = new HtmlBuilder("html")
-            .Child(HtmlHead());
         HtmlBuilder body = new HtmlBuilder("body")
             .Child(HtmlMain())
             .Child(HtmlHiddenForm());
-        html.Child(body);
+        HtmlBuilder html = new HtmlBuilder("html")
+            .Child(HtmlHead())
+            .Child(body);
+
         string text = html.Build();
         return Encoding.UTF8.GetBytes(text);
     }
 
-    private static void Surrender(Player player)
-    {
-        board.EndGame(player.Opponent());
-    }
+
+    private static void Surrender(Player player) => board.EndGame(player.Opponent());
+
 
     private static void Restart(Player player)
     {
         if (!board.isOver)
-        {
             board.EndGame(player.Opponent());
-        }
         board = new Board();
     }
+
 
     private static bool Move(string actionCode)
     {
         bool promote = actionCode.Length == 6 && actionCode[5] == '+';
-        int r1 = Array.IndexOf(board.rows, actionCode[0]);
-        int c1 = Array.IndexOf(board.columns, actionCode[1]);
-        int r2 = Array.IndexOf(board.rows, actionCode[3]);
-        int c2 = Array.IndexOf(board.columns, actionCode[4]);
+
+        int r1 = board.RowIndex(actionCode[0]);
+        int c1 = board.ColumnIndex(actionCode[1]);
+        int r2 = board.RowIndex(actionCode[3]);
+        int c2 = board.ColumnIndex(actionCode[4]);
+
         Piece? piece = board.pieces[c1, r1];
         return piece != null && board.IsPlayersTurn(piece.player) && piece.Move(new Coordinate(c2, r2), promote);
     }
+
 
     private static bool ChooseSquareOrMove(string actionCode)
     {
@@ -262,63 +271,63 @@ class Program
         // scenario 3 : chose highlighted, move piece
         Coordinate? coord = board.CoordByString(actionCode);
         if (coord == null)
-        {
             return false;
-        }
+
         if (board.phase == Board.Phase.ChoosePiece)
         {
             Piece? piece = board.PieceAt(coord.Value);
-            board.phase = Board.Phase.SelectTarget;
-
+            board.CyclePhase();
             return false;
         }
         else if (board.phase == Board.Phase.SelectTarget)
         {
-
+            Move(actionCode);
+            Drop(board.CurrentPlayer(), actionCode);
         }
         return true;
     }
 
+
     private static bool Drop(Player player, string actionCode)
     {
         string abbr = $"{actionCode[0]}";
-        int r1 = Array.IndexOf(board.rows, actionCode[2]);
-        int c1 = Array.IndexOf(board.columns, actionCode[3]);
+
+        int r1 = board.RowIndex(actionCode[2]);
+        int c1 = board.ColumnIndex(actionCode[3]);
+
         Piece? piece = player.PieceFromHandByAbbr(abbr);
         return piece != null && piece.MoveFromHand(new Coordinate(c1, r1));
     }
 
+
     private static void Action(string actionCode)
     {
         bool switchPlayer = false;
-        Player player = board.isPlayer1Turn ? board.player1 : board.player2;
+        Player player = board.CurrentPlayer();
         if (actionCode == "surrender")
-        {
             Surrender(player);
-        }
         else if (actionCode == "restart")
-        {
             Restart(player);
-        }
         else if (actionCode == "stop")
-        {
             run = false;
+        else if (actionCode == "promote")
+        {
+
         }
         else if (actionCode.Length == 2)
         {
+            if (board.phase == Board.Phase.ChoosePiece)
+            {
+
+            }
+            else if (board.phase == Board.Phase.SelectTarget)
+            {
+
+            }
             switchPlayer = ChooseSquareOrMove(actionCode);
         }
-        else if (actionCode.Length == 5 || actionCode.Length == 6)
-        {
-            switchPlayer = Move(actionCode);
-        }
-        else if (actionCode.Length == 4)
-        {
-            switchPlayer = Drop(player, actionCode);
-        } 
+
         if (switchPlayer)
-        {
             board.isPlayer1Turn = !board.isPlayer1Turn;
-        }
     }
 }

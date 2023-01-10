@@ -5,34 +5,29 @@ internal class Knight : Piece
     internal Knight(Player player, Board board) : base(player, true, board)
     { }
 
-    internal override IEnumerable<Coordinate> FindMoves()
-    {
-        return this.isPromoted ? this.GoldMoves() : this.KnightMoves();
-    }
+
+    internal override IEnumerable<Coordinate> FindMoves() => isPromoted ? GoldMoves() : KnightMoves();
+
 
     private IEnumerable<Coordinate> KnightMoves()
     {
-        Coordinate? left = this.Knight(true);
-        if (this.IsAvailableSquare(left))
+        Coordinate? left = Knight(true);
+        if (IsAvailableSquare(left))
         {
             Helper.AssertNotNull(left);
             yield return left.Value;
         }
-        Coordinate? right = this.Knight(false);
-        if (this.IsAvailableSquare(right))
+        Coordinate? right = Knight(false);
+        if (IsAvailableSquare(right))
         {
             Helper.AssertNotNull(right);
             yield return right.Value;
         }
     }
 
-    internal override IEnumerable<Coordinate> FindDrops()
-    {
-        return this.FindDrops(2);
-    }
 
-    internal override void ForcePromote()
-    {
-        this.ForcePromote(2);
-    }
+    internal override IEnumerable<Coordinate> FindDrops() => FindDrops(2);
+
+
+    internal override void ForcePromote() => ForcePromote(2);
 }

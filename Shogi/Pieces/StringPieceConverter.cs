@@ -37,12 +37,11 @@ internal class StringPieceConverter
         // ["gb"] = new Gobetween()
     };
 
+
     internal static Piece? GetPiece(Board board, string abbreviation)
     {
         if (abbreviation == "_")
-        {
             return null;
-        }
         string lowerAbbr = abbreviation.ToLower();
         Player player = abbreviation == lowerAbbr ? board.player2 : board.player1;
         Type type = PIECE_TABLE[lowerAbbr];

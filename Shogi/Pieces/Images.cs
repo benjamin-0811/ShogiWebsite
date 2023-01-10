@@ -1,5 +1,5 @@
-﻿using System.Drawing.Imaging;
-using System.Drawing;
+﻿using System.Drawing;
+using System.Drawing.Imaging;
 
 namespace ShogiWebsite.Shogi.Pieces;
 
@@ -22,10 +22,12 @@ internal static class Images
     private static readonly string wk = "k-.png";
     private static readonly string nul = "null.png";
 
+
     internal static byte[] GetBytes(string imageName)
     {
         return GetBytes(imageName, Path.GetExtension(imageName));
     }
+
 
     internal static byte[] GetBytes(string imageName, string extension)
     {
@@ -40,6 +42,7 @@ internal static class Images
         }
         return Array.Empty<byte>();
     }
+
 
     internal static ImageFormat GetImageFormat(string extension)
     {
@@ -69,6 +72,7 @@ internal static class Images
         throw new Exception("This part of the program is only supported on Windows, please run this program under a Windows OS.");
     }
 
+
     internal static string Get(Piece? piece) => piece switch
     {
         Pawn _ => piece.IsPromoted() ? pp : p,
@@ -81,6 +85,7 @@ internal static class Images
         King _ => piece.player.isPlayer1 ? bk : wk,
         _ => nul
     };
+
 
     internal static string Get(Type type) => type switch
     {
