@@ -1,5 +1,6 @@
 ﻿using ShogiWebsite.Shogi;
 using ShogiWebsite.Shogi.Pieces;
+using System.Drawing;
 using System.Net;
 using System.Text;
 
@@ -29,11 +30,10 @@ class Program
             response.StatusCode = (int)HttpStatusCode.OK;
             response.StatusDescription = "Status OK";
             string post = new StreamReader(request.InputStream, request.ContentEncoding).ReadToEnd();
-            Console.WriteLine($"POST:\t{post}");
             string url = request.RawUrl ?? "";
-            byte[] buffer = GetResponseForUrl(url);
             Action(GetAction(post));
             board.PlayerTurn();
+            byte[] buffer = GetResponseForFileName(url);
             response.ContentLength64 = buffer.Length;
             response.OutputStream.Write(buffer);
             response.OutputStream.Close();
@@ -42,26 +42,24 @@ class Program
     }
 
 
-    internal static byte[] GetResponseForUrl(string url)
+    internal static byte[] GetResponseForFileName(string fileName)
     {
-        string ext = Path.GetExtension(url);
-        Console.WriteLine($"URL:\t{url}");
-
+        string ext = Path.GetExtension(fileName);
         return ext switch
         {
-            ".png" or ".ico" => Images.GetBytes(url),
+            ".png" or ".ico" => Images.GetBytes(fileName),
             "" => AnswerHTML(),
-            ".css" => GetStyleSheet(url),
-            ".js" => GetJavaScript(url),
+            ".css" => GetStyleSheet(fileName),
+            ".js" => GetJavaScript(fileName),
             _ => Array.Empty<byte>(),
         };
     }
 
 
-    internal static byte[] GetStyleSheet(string url) => Helper.GetFileContentBytes(projectDir + @"\assets\css\" + url);
+    internal static byte[] GetStyleSheet(string fileName) => Helper.GetFileContentBytes($@"{projectDir}\assets\css\{fileName}");
 
 
-    internal static byte[] GetJavaScript(string url) => Helper.GetFileContentBytes(projectDir + @"\assets\js\" + url);
+    internal static byte[] GetJavaScript(string fileName) => Helper.GetFileContentBytes($@"{projectDir}\assets\js\{fileName}");
 
 
     internal static string GetProjectDir()
@@ -116,7 +114,7 @@ class Program
             .Property("href", "m_gray.css");
         HtmlBuilder contrastColor = new HtmlBuilder("link")
             .Property("rel", "stylesheet")
-            .Property("href", "c_silver.css");
+            .Property("href", "c_azure.css");
         HtmlBuilder style = new HtmlBuilder("link")
             .Property("rel", "stylesheet")
             .Property("href", "main.css");
@@ -250,82 +248,48 @@ class Program
     }
 
 
-    private static bool Move(string actionCode)
-    {
-        bool promote = actionCode.Length == 6 && actionCode[5] == '+';
-
-        int r1 = board.RowIndex(actionCode[0]);
-        int c1 = board.ColumnIndex(actionCode[1]);
-        int r2 = board.RowIndex(actionCode[3]);
-        int c2 = board.ColumnIndex(actionCode[4]);
-
-        Piece? piece = board.pieces[c1, r1];
-        return piece != null && board.IsPlayersTurn(piece.player) && piece.Move(new Coordinate(c2, r2), promote);
-    }
-
-
-    private static bool ChooseSquareOrMove(string actionCode)
-    {
-        // scenario 1 : chose first piece, highlight squares this piece can move to
-        // scenario 2 : chose unhighlighted square, deselect all squares
-        // scenario 3 : chose highlighted, move piece
-        Coordinate? coord = board.CoordByString(actionCode);
-        if (coord == null)
-            return false;
-
-        if (board.phase == Board.Phase.ChoosePiece)
-        {
-            Piece? piece = board.PieceAt(coord.Value);
-            board.CyclePhase();
-            return false;
-        }
-        else if (board.phase == Board.Phase.SelectTarget)
-        {
-            Move(actionCode);
-            Drop(board.CurrentPlayer(), actionCode);
-        }
-        return true;
-    }
-
-
-    private static bool Drop(Player player, string actionCode)
-    {
-        string abbr = $"{actionCode[0]}";
-
-        int r1 = board.RowIndex(actionCode[2]);
-        int c1 = board.ColumnIndex(actionCode[3]);
-
-        Piece? piece = player.PieceFromHandByAbbr(abbr);
-        return piece != null && piece.MoveFromHand(new Coordinate(c1, r1));
-    }
-
-
     private static void Action(string actionCode)
     {
         bool switchPlayer = false;
+        bool codeIsCoord = board.CoordByString(actionCode).HasValue;
+        bool codeIsHandPiece = StringPieceConverter.PIECE_TABLE.ContainsKey(actionCode.ToLower());
         Player player = board.CurrentPlayer();
         if (actionCode == "surrender")
             Surrender(player);
         else if (actionCode == "restart")
             Restart(player);
         else if (actionCode == "stop")
+        {
             run = false;
+            return;
+        }
         else if (actionCode == "promote")
         {
-
         }
-        else if (actionCode.Length == 2)
+        else if (codeIsCoord)
         {
-            if (board.phase == Board.Phase.ChoosePiece)
+            Coordinate coord = new(board.ColumnIndex(actionCode[1]), board.RowIndex(actionCode[0]));
+            if (board.SelectedIsHandPiece())
             {
-
+                Helper.AssertNotNull(board.selected);
+                switchPlayer = board.selected.MoveFromHand(coord);
+                board.selected = null;
             }
-            else if (board.phase == Board.Phase.SelectTarget)
+            else if (board.SelectedIsOnBoard())
             {
-
+                Helper.AssertNotNull(board.selected);
+                switchPlayer = board.selected.Move(coord, false);
+                board.selected = null;
             }
-            switchPlayer = ChooseSquareOrMove(actionCode);
+            else
+            {
+                Piece? piece = board.PieceAt(coord);
+                if (piece != null && piece.player == board.CurrentPlayer())
+                    board.selected ??= board.PieceAt(coord);
+            }
         }
+        else if (codeIsHandPiece)
+            board.selected = player.PieceFromHandByAbbr(actionCode);
 
         if (switchPlayer)
             board.isPlayer1Turn = !board.isPlayer1Turn;

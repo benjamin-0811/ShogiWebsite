@@ -7,6 +7,7 @@ internal struct Coordinate
 {
     internal int Column { get; set; }
     internal int Row { get; set; }
+    internal static Coordinate nullPos = new(-1, -1);
 
 
     internal Coordinate(int column, int row)
@@ -28,8 +29,7 @@ internal class Board
     internal HtmlBuilder log;
     internal bool isOver;
     internal Player? winner;
-    internal Phase phase;
-    internal Coordinate? selected;
+    internal Piece? selected;
 
     internal readonly string[] columns;
     internal readonly string[] rows;
@@ -56,13 +56,18 @@ internal class Board
         isPlayer1Turn = true;
         isOver = false;
         winner = null;
-        phase = Phase.ChoosePiece;
         selected = null;
         player1.InitLater();
         player2.InitLater();
 
         log = new HtmlBuilder().Id("log").Class("log");
     }
+
+
+    internal bool SelectedIsHandPiece() => selected != null && selected.pos.Equals(Coordinate.nullPos);
+
+
+    internal bool SelectedIsOnBoard() => selected != null && IsOnBoard(selected.pos);
 
 
     internal void Log(string newEntry) => log.Child(new HtmlBuilder("p").Child(newEntry));
@@ -75,7 +80,7 @@ internal class Board
     }
 
 
-    internal int ColumnIndex(char character) => Array.IndexOf(columns, character);
+    internal int ColumnIndex(char character) => Array.IndexOf(columns, $"{character}");
 
 
     private IEnumerable<string> Rows()
@@ -85,7 +90,7 @@ internal class Board
     }
 
 
-    internal int RowIndex(char character) => Array.IndexOf(rows, character);
+    internal int RowIndex(char character) => Array.IndexOf(rows, $"{character}");
 
 
     internal void SetPiece(Piece? piece, Coordinate pos)
@@ -116,45 +121,12 @@ internal class Board
     internal Piece? PieceAt(Coordinate pos) => IsOnBoard(pos) ? pieces[pos.Column, pos.Row] : null;
 
 
-    internal enum Phase
-    {
-        ChoosePiece,
-        SelectTarget,
-        AskForPromotion
-    }
-
-
-    internal void CyclePhase()
-    {
-        phase = phase switch
-        {
-            Phase.ChoosePiece => Phase.SelectTarget,
-            Phase.SelectTarget => Phase.AskForPromotion,
-            Phase.AskForPromotion => Phase.ChoosePiece,
-            _ => throw new NotImplementedException()
-        };
-    }
-
-
-    /// <summary> Throw-away </summary>
-    internal void CyclePhaseBack()
-    {
-        phase = phase switch
-        {
-            Phase.ChoosePiece => Phase.AskForPromotion,
-            Phase.SelectTarget => Phase.ChoosePiece,
-            Phase.AskForPromotion => Phase.SelectTarget,
-            _ => throw new NotImplementedException()
-        };
-    }
-
-
     internal Coordinate? CoordByString(string pos)
     {
         if (pos.Length != 2)
             return null;
-        int row = Array.IndexOf(rows, pos[0]);
-        int column = Array.IndexOf(columns, pos[1]);
+        int row = RowIndex(pos[0]);
+        int column = ColumnIndex(pos[1]);
         return new Coordinate(column, row);
     }
 
@@ -290,7 +262,7 @@ internal class Board
     internal HtmlBuilder SquareHtml(Coordinate pos)
     {
         string posString = CoordinateString(pos);
-        IEnumerable<Coordinate> highlighted = GetHighlightedSquares(pos);
+        IEnumerable<Coordinate> highlighted = GetHighlightedSquares();
         string cl = highlighted.Contains(pos) ? "highlightedSquare" : "square";
         StringBuilder squareClass = new(cl);
         HtmlBuilder builder = new HtmlBuilder().Id(posString);
@@ -314,11 +286,10 @@ internal class Board
     }
 
 
-    internal IEnumerable<Coordinate> GetHighlightedSquares(Coordinate pos)
+    internal IEnumerable<Coordinate> GetHighlightedSquares()
     {
-        Piece? piece = PieceAt(pos);
-        if (piece == null)
+        if (selected == null || !IsPlayersTurn(selected.player))
             return Enumerable.Empty<Coordinate>();
-        return IsOnBoard(piece.pos) ? piece.FindMoves() : piece.FindDrops();
+        return IsOnBoard(selected.pos) ? selected.FindMoves() : selected.FindDrops();
     }
 }

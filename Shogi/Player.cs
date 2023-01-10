@@ -196,7 +196,7 @@ internal class Player
             {
                 string abbr = Names.Abbreviation(piece);
                 htmlHandPiece.Id(abbr)
-                    .Property("onclick", $"selectMoves('{abbr}')");
+                    .Property("onclick", $"submitForm('{abbr}')");
             }
             builder.Child(htmlHandPiece);
         }

@@ -17,7 +17,7 @@ internal abstract class Piece
         isPromoted = false;
         this.canPromote = canPromote;
         this.board = board;
-        pos = new Coordinate(-1, -1);
+        pos = Coordinate.nullPos;
     }
 
 
