@@ -46,7 +46,7 @@ internal class Pawn : Piece
     }
 
 
-    private bool IsOwnPawn(Piece? piece) => piece is Pawn && !piece.isPromoted && DifferentPlayer(piece);
+    private bool IsOwnPawn(Piece? piece) => piece is Pawn && !piece.isPromoted && !DifferentPlayer(piece);
 
 
     private bool WouldCheckmate(Coordinate square)

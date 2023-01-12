@@ -22,7 +22,7 @@ internal class King : Piece
         IEnumerable<Piece> opponentPieces = player.Opponent().PlayersPieces();
         foreach (Piece opponentPiece in opponentPieces)
         {
-            if (CanMoveTo(at))
+            if (CouldMoveTo(at))
             {
                 result = true;
                 break;
@@ -57,7 +57,7 @@ internal class King : Piece
         IEnumerable<Piece> ownPieces = player.PlayersPieces();
         foreach (Piece capturer in ownPieces)
         {
-            if (capturer == this && !WouldBeCheckAt(square) || CanMoveTo(square))
+            if (capturer == this && !WouldBeCheckAt(square) || CouldMoveTo(square))
                 yield return capturer;
         }
     }
@@ -170,7 +170,7 @@ internal class King : Piece
         IEnumerable<Piece> potentialPieces = player.Opponent().PlayersPieces();
         foreach (Piece piece in potentialPieces)
         {
-            if (CanMoveTo(pos))
+            if (CouldMoveTo(pos))
                 yield return piece;
         }
     }

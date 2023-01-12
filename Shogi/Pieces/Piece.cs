@@ -23,7 +23,7 @@ internal abstract class Piece
 
     internal bool Move(Coordinate to, bool doesPromote)
     {
-        IEnumerable<Coordinate> moves = FindMoves();
+        IEnumerable<Coordinate> moves = ValidatedMoves(FindMoves());
         if (moves != null && moves.Contains(to))
         {
             Coordinate old = pos;
@@ -101,7 +101,7 @@ internal abstract class Piece
     internal bool IsPromoted() => canPromote && isPromoted;
 
 
-    internal bool CanMoveTo(Coordinate pos) => FindMoves().Contains(pos);
+    internal bool CouldMoveTo(Coordinate pos) => FindMoves().Contains(pos);
 
 
     internal bool CanDropOn(Coordinate pos) => FindDrops().Contains(pos);
@@ -121,7 +121,7 @@ internal abstract class Piece
         {
             for (int j = 0; j < board.width; j++)
             {
-                Coordinate pos = new(i, j);
+                Coordinate pos = new(j, i);
                 if (board.PieceAt(pos) == null)
                     yield return pos;
             }
@@ -165,6 +165,16 @@ internal abstract class Piece
     }
 
 
+    internal IEnumerable<Coordinate> ValidatedMoves(IEnumerable<Coordinate> tempMoves)
+    {
+        foreach (Coordinate move in tempMoves)
+        {
+            if (!DoesMoveCheckOwnKing(move))
+                yield return move;
+        }
+    }
+
+
     protected bool CanContinue(Coordinate? pos) => pos != null && board.PieceAt(pos.Value) == null;
 
 
@@ -173,7 +183,7 @@ internal abstract class Piece
         if (pos == null)
             return false;
         Piece? piece = board.PieceAt(pos.Value);
-        return piece == null || piece.player != player;
+        return piece == null || piece.player != player; ;
     }
 
 

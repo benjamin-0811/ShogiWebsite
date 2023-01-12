@@ -32,7 +32,6 @@ class Program
             string post = new StreamReader(request.InputStream, request.ContentEncoding).ReadToEnd();
             string url = request.RawUrl ?? "";
             Action(GetAction(post));
-            board.PlayerTurn();
             byte[] buffer = GetResponseForFileName(url);
             response.ContentLength64 = buffer.Length;
             response.OutputStream.Write(buffer);
@@ -269,23 +268,27 @@ class Program
         else if (codeIsCoord)
         {
             Coordinate coord = new(board.ColumnIndex(actionCode[1]), board.RowIndex(actionCode[0]));
-            if (board.SelectedIsHandPiece())
+            Piece? piece = board.PieceAt(coord);
+            bool selectedIsHandPiece = board.SelectedIsHandPiece();
+            bool selectedIsOnBoard = board.SelectedIsOnBoard();
+            if (!(selectedIsHandPiece || selectedIsOnBoard))
             {
-                Helper.AssertNotNull(board.selected);
-                switchPlayer = board.selected.MoveFromHand(coord);
-                board.selected = null;
-            }
-            else if (board.SelectedIsOnBoard())
-            {
-                Helper.AssertNotNull(board.selected);
-                switchPlayer = board.selected.Move(coord, false);
-                board.selected = null;
+                if (piece != null && piece.player == board.CurrentPlayer())
+                    board.selected ??= board.PieceAt(coord);
             }
             else
             {
-                Piece? piece = board.PieceAt(coord);
-                if (piece != null && piece.player == board.CurrentPlayer())
-                    board.selected ??= board.PieceAt(coord);
+                Helper.AssertNotNull(board.selected);
+                if (piece != null && !piece.DifferentPlayer(board.selected))
+                    board.selected = piece;
+                else
+                {
+                    if (selectedIsOnBoard)
+                        switchPlayer = board.selected.Move(coord, false);
+                    else if (selectedIsHandPiece)
+                        switchPlayer = board.selected.MoveFromHand(coord);
+                    board.selected = null;
+                }
             }
         }
         else if (codeIsHandPiece)

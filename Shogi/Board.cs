@@ -230,16 +230,6 @@ internal class Board
     }
 
 
-    internal void PlayerTurn()
-    {
-        Player player = CurrentPlayer();
-        player.AfterOpponent();
-        if (isOver)
-            return;
-        player.PrepareTurn();
-    }
-
-
     internal HtmlBuilder GameEndHtml()
     {
         HtmlBuilder builder = new();
@@ -290,6 +280,6 @@ internal class Board
     {
         if (selected == null || !IsPlayersTurn(selected.player))
             return Enumerable.Empty<Coordinate>();
-        return IsOnBoard(selected.pos) ? selected.FindMoves() : selected.FindDrops();
+        return IsOnBoard(selected.pos) ? selected.ValidatedMoves(selected.FindMoves()) : selected.FindDrops();
     }
 }
